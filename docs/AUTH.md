@@ -1,0 +1,395 @@
+# My Verse — Authentication & Users
+
+> Phase 1 specification for auth, users, staff profiles, and permissions.  
+> See also: [PROJECT_PLAN.md](./PROJECT_PLAN.md) · [SETUP.md](./SETUP.md) · [Postman](../postman/README.md)
+
+---
+
+## Table of Contents
+
+1. [Overview](#overview)
+2. [Roles & Permissions](#roles--permissions)
+3. [Data Models](#data-models)
+4. [Registration Flows](#registration-flows)
+5. [Authentication](#authentication)
+6. [API Endpoints](#api-endpoints)
+7. [Guards & Decorators](#guards--decorators)
+8. [Environment Variables](#environment-variables)
+9. [Security Notes](#security-notes)
+
+---
+
+## Overview
+
+All actors — Admin, Staff, and Public — are **`User` documents** in MongoDB. Role determines capabilities. Staff users have an additional **`StaffProfile`** collection for extended performer data.
+
+| Principle | Detail |
+|-----------|--------|
+| Identity | Single `users` collection |
+| Auth | JWT bearer token returned by login |
+| Permissions | Hardcoded in `permissions.ts` — not stored in DB |
+| Email | Unique, used for login |
+| Username | Unique |
+| Deactivation | `isActive: false` blocks login; no hard delete in v1 |
+
+---
+
+## Roles & Permissions
+
+### Roles
+
+```typescript
+enum UserRole {
+  ADMIN = 'ADMIN',
+  STAFF = 'STAFF',
+  PUBLIC = 'PUBLIC',
+}
+```
+
+### Permission matrix
+
+| Permission | ADMIN | STAFF | PUBLIC | Description |
+|------------|:-----:|:-----:|:------:|-------------|
+| `users:manage` | ✓ | — | — | List/create/update/deactivate users |
+| `users:read:self` | ✓ | ✓ | ✓ | Read own user record |
+| `users:update:self` | ✓ | ✓ | ✓ | Update own base fields |
+| `staff:read` | ✓ | ✓ | ✓ | List and view staff profiles |
+| `staff:update:self` | ✓ | ✓ | — | Update own staff profile |
+| `posts:crud` | ✓ | — | — | Create/edit/delete posts (Phase 2) |
+| `posts:publish` | ✓ | — | — | Publish/unpublish posts (Phase 2) |
+| `posts:read` | ✓ | ✓ | ✓ | View published posts (Phase 2) |
+| `cast:respond` | ✓ | ✓ | — | Accept/decline cast requests (Phase 2) |
+
+**Staff and Public are almost identical** in v1. Differences: Staff has `StaffProfile`, can update it, and will respond to cast requests.
+
+Admin has **all** permissions.
+
+### Enforcement
+
+```typescript
+// Coarse — by role
+@Roles(UserRole.ADMIN)
+
+// Fine-grained — by permission constant
+@RequirePermission('users:manage')
+```
+
+`PermissionsGuard` checks the authenticated user's role against `ROLE_PERMISSIONS` in code.
+
+---
+
+## Data Models
+
+### User
+
+```typescript
+{
+  _id: ObjectId,
+  email: string,           // unique, indexed
+  username: string,        // unique, indexed
+  passwordHash: string,    // bcrypt; never returned in API
+  displayName?: string,
+  role: 'ADMIN' | 'STAFF' | 'PUBLIC',
+  isActive: boolean,       // default true
+  nsfwEnabled: boolean,    // default false
+  defaultVisibility?: 'PUBLIC' | 'AUTHENTICATED' | 'STAFF_ONLY' | 'PRIVATE',
+  createdAt: Date,
+  updatedAt: Date,
+}
+```
+
+**Indexes:** `email` (unique), `username` (unique), `role`, `isActive`
+
+### StaffProfile
+
+Only exists when `User.role === 'STAFF'`. One profile per staff user.
+
+```typescript
+{
+  _id: ObjectId,
+  userId: ObjectId,        // ref User, unique
+  stageName?: string,
+  bio?: string,
+  dateOfBirth?: Date,
+  location?: string,
+  skills?: string[],
+  socialLinks?: {
+    platform: string,
+    url: string,
+  }[],
+  profileImage: string,  // required — path relative to .uploads/
+  isProfileComplete: boolean,
+  createdAt: Date,
+  updatedAt: Date,
+}
+```
+
+**Indexes:** `userId` (unique)
+
+> **Note:** Exact staff form fields may expand during implementation. `isProfileComplete` is `true` when all required fields (including `profileImage`) are present.
+
+### User API shape (safe — no password)
+
+```typescript
+{
+  id: string,
+  email: string,
+  username: string,
+  displayName?: string,
+  role: UserRole,
+  isActive: boolean,
+  nsfwEnabled: boolean,
+  defaultVisibility?: string,
+  staffProfile?: StaffProfile,  // populated when role is STAFF
+  createdAt: string,
+  updatedAt: string,
+}
+```
+
+---
+
+## Registration Flows
+
+### Path A — Public registration
+
+```
+POST /api/v1/auth/register
+```
+
+**Body:**
+
+```json
+{
+  "email": "user@example.com",
+  "username": "johndoe",
+  "password": "securePassword123",
+  "displayName": "John Doe"
+}
+```
+
+**Result:** `User` with `role: PUBLIC`, `isActive: true`.
+
+---
+
+### Path B — Staff self-registration
+
+Staff registration uses a **multipart form** with a mandatory profile image in a **single request**.
+
+```
+POST /api/v1/auth/register/staff
+Content-Type: multipart/form-data
+```
+
+**Form fields:**
+
+| Field | Type | Required |
+|-------|------|----------|
+| `profileImage` | file (jpeg/png/webp, ≤ 5MB) | Yes |
+| `email` | string | Yes |
+| `username` | string | Yes |
+| `password` | string | Yes |
+| `displayName` | string | Yes |
+| `stageName` | string | Yes |
+| `bio` | string | Yes |
+| `location` | string | No |
+| `skills` | JSON string array | No |
+| `dateOfBirth` | ISO date string | No |
+
+**Result:** `User` with `role: STAFF`, `isActive: true`, plus `StaffProfile`. Returns JWT and user (same shape as login).
+
+**Validation:**
+
+- `profileImage` file is required
+- `role` cannot be set by client — always `STAFF`
+- Self-registered staff are **immediately active** as `STAFF` (no admin approval step in v1)
+
+**Updating profile image later:** logged-in staff can use `POST /api/v1/media/upload` (JWT) then `PATCH /api/v1/staff/me` with the new `profileImage` path.
+
+---
+
+### Path C — Admin creates user
+
+```
+POST /api/v1/users
+Authorization: Bearer <admin-token>
+```
+
+Admin can create `PUBLIC` or `STAFF` users. For `STAFF`, include staff profile fields and optionally `profileImage`.
+
+Admin accounts are **never** created via this endpoint — only via the seeder script.
+
+---
+
+## Authentication
+
+### Login
+
+```
+POST /api/v1/auth/login
+```
+
+**Body:**
+
+```json
+{
+  "email": "user@example.com",
+  "password": "securePassword123"
+}
+```
+
+**Success response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "accessToken": "eyJhbGciOiJIUzI1NiIs...",
+    "user": {
+      "id": "...",
+      "email": "user@example.com",
+      "username": "johndoe",
+      "role": "PUBLIC",
+      "isActive": true
+    }
+  }
+}
+```
+
+**Failure cases:**
+
+| Condition | HTTP | Message |
+|-----------|------|---------|
+| Wrong email/password | 401 | Invalid credentials |
+| `isActive: false` | 403 | Account deactivated |
+
+### JWT payload
+
+```typescript
+{
+  sub: string,      // userId
+  email: string,
+  role: UserRole,
+  iat: number,
+  exp: number,
+}
+```
+
+### Using the token
+
+```
+GET /api/v1/auth/me
+Authorization: Bearer <accessToken>
+```
+
+Returns full user object (+ `staffProfile` if STAFF).
+
+### Token lifetime
+
+Configured via `JWT_EXPIRES_IN` env var (e.g. `7d`). No refresh token in v1.
+
+---
+
+## API Endpoints
+
+All routes under `/api/v1`. Response envelope documented in [PROJECT_PLAN.md](./PROJECT_PLAN.md#api-conventions).
+
+Import ready-made requests from [`postman/My-Verse-API.postman_collection.json`](../postman/My-Verse-API.postman_collection.json).
+
+### Auth
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `POST` | `/auth/register` | Public | Register as PUBLIC |
+| `POST` | `/auth/register/staff` | Public | Register as STAFF + profile |
+| `POST` | `/auth/login` | Public | Login, returns JWT |
+| `GET` | `/auth/me` | JWT | Current user |
+
+### Users
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/users` | Admin | List all users (paginated) |
+| `POST` | `/users` | Admin | Create user |
+| `PATCH` | `/users/:id` | Admin | Update user (role, fields) |
+| `PATCH` | `/users/:id/activate` | Admin | Set `isActive: true` |
+| `PATCH` | `/users/:id/deactivate` | Admin | Set `isActive: false` |
+| `PATCH` | `/users/me` | JWT | Update own base fields |
+
+**Self-update allowed fields:** `displayName`, `nsfwEnabled`, `defaultVisibility` — not `role`, `email`, or `isActive`.
+
+### Staff
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/staff` | Public | List staff profiles (complete only) |
+| `GET` | `/staff/:id` | Public | Single staff profile |
+| `PATCH` | `/staff/me` | Staff | Update own staff profile |
+
+### Media (Phase 1 — profile images)
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `POST` | `/media/upload` | JWT | Upload image; returns path + URL |
+
+**Profile upload limits:** ≤ 5 MB; `image/jpeg`, `image/png`, `image/webp`.
+
+Files stored at `.uploads/profiles/<filename>`. Publicly served at `/uploads/profiles/<filename>`.
+
+### Health
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/health` | Public | App + MongoDB status |
+
+---
+
+## Guards & Decorators
+
+| Name | Purpose |
+|------|---------|
+| `@Public()` | Skip JWT authentication |
+| `@Roles(...roles)` | Require one of the listed roles |
+| `@RequirePermission(...perms)` | Require permission from hardcoded map |
+| `@CurrentUser()` | Inject authenticated user into handler param |
+
+**Global guard:** `JwtAuthGuard` applied app-wide; routes marked `@Public()` opt out.
+
+**Order:** `JwtAuthGuard` → `RolesGuard` / `PermissionsGuard`
+
+---
+
+## Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `PORT` | No | Server port (default `3000`) |
+| `MONGODB_URI` | Yes | MongoDB connection string |
+| `JWT_SECRET` | Yes | Secret for signing JWTs |
+| `JWT_EXPIRES_IN` | No | Token expiry (default `7d`) |
+| `ADMIN_EMAIL` | Seeder | Admin email for seed script |
+| `ADMIN_USERNAME` | Seeder | Admin username for seed script |
+| `ADMIN_PASSWORD` | Seeder | Admin password for seed script |
+| `CORS_ORIGINS` | No | Comma-separated allowed origins |
+
+See [SETUP.md](./SETUP.md) for full setup instructions.
+
+---
+
+## Security Notes
+
+1. **Passwords** — bcrypt with appropriate cost factor (12+). Never log or return `passwordHash`.
+2. **Role injection** — never accept `role: ADMIN` from public endpoints. Validate role on admin-only user creation.
+3. **Deactivated accounts** — check `isActive` in login and JWT validation strategy.
+4. **Upload validation** — verify MIME type and file size server-side; generate unique filenames.
+5. **Public uploads** — `.uploads/` is publicly served in v1. Do not store sensitive files there.
+6. **No rate limiting** — handled by external gateway; not this app's responsibility.
+
+---
+
+## Document History
+
+| Date | Change |
+|------|--------|
+| 2026-06-29 | Initial auth specification — Phase 1 |
+| 2026-06-29 | Staff register → multipart single request; staff approval resolved (immediate STAFF) |
+| 2026-06-29 | Linked Postman collection for API testing |

@@ -1,0 +1,6 @@
+export enum Visibility {
+  PUBLIC = 'PUBLIC',
+  AUTHENTICATED = 'AUTHENTICATED',
+  STAFF_ONLY = 'STAFF_ONLY',
+  PRIVATE = 'PRIVATE',
+}

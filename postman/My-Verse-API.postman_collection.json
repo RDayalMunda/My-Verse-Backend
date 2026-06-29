@@ -1,0 +1,553 @@
+{
+  "info": {
+    "_postman_id": "my-verse-api-collection",
+    "name": "My Verse API",
+    "description": "My Verse backend API (Phase 1 — Auth).\n\nBase URL: {{baseUrl}}\n\nImport the **My Verse — Local** environment alongside this collection.\n\nAfter **Login (Admin)** or **Login**, the `accessToken` variable is set automatically for bearer-auth requests.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api/v1"
+    },
+    {
+      "key": "accessToken",
+      "value": ""
+    },
+    {
+      "key": "userId",
+      "value": ""
+    },
+    {
+      "key": "staffProfileId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Public. Returns app and MongoDB connection status."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register (Public)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"username\": \"johndoe\",\n  \"password\": \"securePass123\",\n  \"displayName\": \"John Doe\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Public. Creates a PUBLIC user. Returns JWT and user."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.data && json.data.accessToken) {",
+                  "    pm.environment.set('accessToken', json.data.accessToken);",
+                  "    pm.collectionVariables.set('accessToken', json.data.accessToken);",
+                  "  }",
+                  "  if (json.data && json.data.user && json.data.user.id) {",
+                  "    pm.environment.set('userId', json.data.user.id);",
+                  "    pm.collectionVariables.set('userId', json.data.user.id);",
+                  "  }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Register (Staff)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "profileImage",
+                  "type": "file",
+                  "src": [],
+                  "description": "Required. jpeg, png, or webp. Max 5MB."
+                },
+                {
+                  "key": "email",
+                  "value": "performer@example.com",
+                  "type": "text"
+                },
+                {
+                  "key": "username",
+                  "value": "star_performer",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "securePass123",
+                  "type": "text"
+                },
+                {
+                  "key": "displayName",
+                  "value": "Star Performer",
+                  "type": "text"
+                },
+                {
+                  "key": "stageName",
+                  "value": "Star",
+                  "type": "text"
+                },
+                {
+                  "key": "bio",
+                  "value": "Professional performer",
+                  "type": "text"
+                },
+                {
+                  "key": "location",
+                  "value": "Los Angeles",
+                  "type": "text",
+                  "disabled": true
+                },
+                {
+                  "key": "skills",
+                  "value": "[\"acting\",\"voice\"]",
+                  "type": "text",
+                  "disabled": true
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register/staff",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register", "staff"]
+            },
+            "description": "Public. Multipart form with mandatory profileImage file. Creates STAFF user + profile."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.data && json.data.accessToken) {",
+                  "    pm.environment.set('accessToken', json.data.accessToken);",
+                  "    pm.collectionVariables.set('accessToken', json.data.accessToken);",
+                  "  }",
+                  "  if (json.data && json.data.user) {",
+                  "    pm.environment.set('userId', json.data.user.id);",
+                  "    pm.collectionVariables.set('userId', json.data.user.id);",
+                  "    if (json.data.user.staffProfile && json.data.user.staffProfile.id) {",
+                  "      pm.environment.set('staffProfileId', json.data.user.staffProfile.id);",
+                  "      pm.collectionVariables.set('staffProfileId', json.data.user.staffProfile.id);",
+                  "    }",
+                  "  }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Login",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"securePass123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Public. Returns JWT access token and user summary."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.data && json.data.accessToken) {",
+                  "    pm.environment.set('accessToken', json.data.accessToken);",
+                  "    pm.collectionVariables.set('accessToken', json.data.accessToken);",
+                  "  }",
+                  "  if (json.data && json.data.user && json.data.user.id) {",
+                  "    pm.environment.set('userId', json.data.user.id);",
+                  "    pm.collectionVariables.set('userId', json.data.user.id);",
+                  "  }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Login (Admin)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Public. Uses adminEmail and adminPassword from environment."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.data && json.data.accessToken) {",
+                  "    pm.environment.set('accessToken', json.data.accessToken);",
+                  "    pm.collectionVariables.set('accessToken', json.data.accessToken);",
+                  "  }",
+                  "  if (json.data && json.data.user && json.data.user.id) {",
+                  "    pm.environment.set('userId', json.data.user.id);",
+                  "    pm.collectionVariables.set('userId', json.data.user.id);",
+                  "  }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
+            },
+            "description": "JWT required. Returns current user (+ staffProfile if STAFF)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            },
+            "description": "Admin only. Paginated user list."
+          },
+          "response": []
+        },
+        {
+          "name": "Create User (Public)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newuser@example.com\",\n  \"username\": \"newuser\",\n  \"password\": \"securePass123\",\n  \"displayName\": \"New User\",\n  \"role\": \"PUBLIC\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            },
+            "description": "Admin only. Create PUBLIC or STAFF user (not ADMIN)."
+          },
+          "response": []
+        },
+        {
+          "name": "Create User (Staff)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"staff@example.com\",\n  \"username\": \"staffuser\",\n  \"password\": \"securePass123\",\n  \"displayName\": \"Staff User\",\n  \"role\": \"STAFF\",\n  \"staffProfile\": {\n    \"stageName\": \"Stage Name\",\n    \"bio\": \"Performer bio\",\n    \"location\": \"New York\",\n    \"skills\": [\"acting\"],\n    \"profileImage\": \"profiles/example.jpg\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            },
+            "description": "Admin only. staffProfile required when role is STAFF."
+          },
+          "response": []
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"displayName\": \"Updated Name\",\n  \"nsfwEnabled\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}"]
+            },
+            "description": "Admin only. Update user by ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Activate User",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/activate",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}", "activate"]
+            },
+            "description": "Admin only. Sets isActive to true."
+          },
+          "response": []
+        },
+        {
+          "name": "Deactivate User",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/deactivate",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}", "deactivate"]
+            },
+            "description": "Admin only. Sets isActive to false."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Me",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"displayName\": \"My Display Name\",\n  \"nsfwEnabled\": false,\n  \"defaultVisibility\": \"PUBLIC\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "me"]
+            },
+            "description": "JWT required. Update own displayName, nsfwEnabled, defaultVisibility."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Staff",
+      "item": [
+        {
+          "name": "List Staff",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/staff",
+              "host": ["{{baseUrl}}"],
+              "path": ["staff"]
+            },
+            "description": "Public. Lists complete staff profiles only."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.data && json.data.length > 0 && json.data[0].id) {",
+                  "    pm.environment.set('staffProfileId', json.data[0].id);",
+                  "    pm.collectionVariables.set('staffProfileId', json.data[0].id);",
+                  "  }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Get Staff Profile",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/staff/{{staffProfileId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["staff", "{{staffProfileId}}"]
+            },
+            "description": "Public. Get single staff profile by profile ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Update My Staff Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"stageName\": \"Updated Stage Name\",\n  \"bio\": \"Updated bio\",\n  \"location\": \"Los Angeles\",\n  \"skills\": [\"acting\", \"voice\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/staff/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["staff", "me"]
+            },
+            "description": "Staff role required. Update own staff profile."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Media",
+      "item": [
+        {
+          "name": "Upload Profile Image",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [],
+                  "description": "jpeg, png, or webp. Max 5MB."
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/media/upload",
+              "host": ["{{baseUrl}}"],
+              "path": ["media", "upload"]
+            },
+            "description": "JWT required. Upload profile image. Returns path and url."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

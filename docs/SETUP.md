@@ -1,7 +1,7 @@
 # My Verse — Local Setup
 
 > How to run the My Verse backend locally.  
-> See also: [PROJECT_PLAN.md](./PROJECT_PLAN.md) · [AUTH.md](./AUTH.md) · [REGISTRATION.md](./REGISTRATION.md) · [Postman](../postman/README.md)
+> See also: [PROJECT_PLAN.md](./PROJECT_PLAN.md) · [AUTH.md](./AUTH.md) · [REGISTRATION.md](./REGISTRATION.md) · [PROJECTS.md](./PROJECTS.md) · [CONTENT_CREATION_GUIDE.md](./CONTENT_CREATION_GUIDE.md) · [Postman](../postman/README.md)
 
 ---
 
@@ -116,8 +116,8 @@ Media is stored locally in `.uploads/`:
 ```
 .uploads/
 ├── profiles/    # staff profile images
-├── images/      # post images (Phase 2)
-└── videos/      # post videos (Phase 2)
+├── images/      # project images (Phase 2)
+└── videos/      # project videos (Phase 2)
 ```
 
 - **Gitignored** — not committed to the repository
@@ -213,6 +213,71 @@ Expected:
 
 ---
 
+## Example: Project flow (Phase 2)
+
+See [PROJECTS.md](./PROJECTS.md) for the full API reference.
+
+### 1. Login as admin
+
+```bash
+curl -X POST http://localhost:3000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@myverse.local","password":"change-me-before-deploy"}'
+```
+
+Save `data.accessToken` as `$TOKEN`.
+
+### 2. Create a book project
+
+```bash
+curl -X POST http://localhost:3000/api/v1/projects \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"type":"BOOK","title":"My First Book","bookDetails":{"summary":"A tale."}}'
+```
+
+### 3. Add section and text item
+
+```bash
+# Replace PROJECT_ID and SECTION_ID from responses
+curl -X POST http://localhost:3000/api/v1/projects/PROJECT_ID/sections \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"label":"Chapter 1"}'
+
+curl -X POST http://localhost:3000/api/v1/projects/PROJECT_ID/sections/SECTION_ID/items \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"kind":"TEXT","textContent":"Once upon a time..."}'
+```
+
+### 4. Publish section, then project
+
+```bash
+curl -X POST http://localhost:3000/api/v1/projects/PROJECT_ID/sections/SECTION_ID/publish \
+  -H "Authorization: Bearer $TOKEN"
+
+curl -X POST http://localhost:3000/api/v1/projects/PROJECT_ID/publish \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+### 5. Public read
+
+```bash
+curl http://localhost:3000/api/v1/projects/PROJECT_ID
+```
+
+### Upload project image (for PHOTOSHOOT)
+
+```bash
+curl -X POST http://localhost:3000/api/v1/media/upload/image \
+  -F "file=@./photo.jpg"
+```
+
+Use the returned `data` object as `file` when creating an IMAGE section item.
+
+---
+
 ## NPM Scripts
 
 | Script | Description |
@@ -257,3 +322,4 @@ Expected:
 | 2026-06-29 | Initial setup guide |
 | 2026-06-29 | Added Postman import section |
 | 2026-06-29 | FileMeta upload flow; REGISTRATION.md |
+| 2026-06-29 | Phase 2 project flow examples; PROJECTS.md |

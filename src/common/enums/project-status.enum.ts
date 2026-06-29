@@ -1,0 +1,6 @@
+export enum ProjectStatus {
+  DRAFT = 'DRAFT',
+  PUBLISHED = 'PUBLISHED',
+  UNPUBLISHED = 'UNPUBLISHED',
+  DELETED = 'DELETED',
+}

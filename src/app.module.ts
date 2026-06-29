@@ -10,6 +10,9 @@ import { UsersModule } from './users/users.module';
 import { StaffModule } from './staff/staff.module';
 import { MediaModule } from './media/media.module';
 import { HealthModule } from './health/health.module';
+import { ProjectsModule } from './projects/projects.module';
+import { SectionsModule } from './sections/sections.module';
+import { SectionItemsModule } from './section-items/section-items.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
@@ -35,6 +38,9 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
     StaffModule,
     MediaModule,
     HealthModule,
+    ProjectsModule,
+    SectionsModule,
+    SectionItemsModule,
   ],
   providers: [
     {

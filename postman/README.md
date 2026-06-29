@@ -29,6 +29,11 @@ Postman import files for the My Verse backend API.
 | `staffProfileId` | Staff profile ID (set from staff list/register) |
 | `adminEmail` | Admin login email (matches `.env`) |
 | `adminPassword` | Admin login password (matches `.env`) |
+| `projectId` | Last created project ID |
+| `sectionId` | Last created section ID |
+| `sectionItemId` | Last created section item ID |
+| `projectImageMeta` | FileMeta from project image upload |
+| `projectVideoMeta` | FileMeta from project video upload |
 
 ## Registration flow in Postman
 
@@ -39,16 +44,29 @@ Auth  → Register (Staff)        → required profilePicture: {{profilePictureM
 Users → Update Me               → optional profilePicture: {{profilePictureMeta}}
 ```
 
-Render images in the frontend with: `{origin}{fileMeta.url}` (e.g. `http://localhost:3000/uploads/profiles/...`).
+## Project flow in Postman (Phase 2)
 
-See [docs/REGISTRATION.md](../docs/REGISTRATION.md) for full field specifications.
+```
+Auth → Login (Admin)              → sets accessToken
+Projects → Create Book            → sets projectId
+Sections → Create Section         → sets sectionId
+Section Items → Add Text Item     → sets sectionItemId
+Sections → Publish Section
+Projects → Publish Project
+Projects → Get Project (no auth)  → public read with published sections
+```
+
+For PHOTOSHOOT: **Media → Upload Project Image** → **Add Image Item**  
+For SHOW: **Media → Upload Project Video** → **Add Video Item**
+
+Render images in the frontend with: `{origin}{fileMeta.url}` (e.g. `http://localhost:3000/uploads/images/...`).
+
+See [docs/PROJECTS.md](../docs/PROJECTS.md) and [docs/CONTENT_CREATION_GUIDE.md](../docs/CONTENT_CREATION_GUIDE.md) for full field specifications.
 
 ## Maintenance
 
 **Update this collection whenever you add or change an API endpoint.**
 
 1. Edit the collection in Postman, or update the JSON file directly
-2. Match request paths, bodies, and auth to [docs/REGISTRATION.md](../docs/REGISTRATION.md), [docs/AUTH.md](../docs/AUTH.md), and [docs/PROJECT_PLAN.md](../docs/PROJECT_PLAN.md)
+2. Match request paths, bodies, and auth to [docs/PROJECTS.md](../docs/PROJECTS.md), [docs/REGISTRATION.md](../docs/REGISTRATION.md), [docs/AUTH.md](../docs/AUTH.md), and [docs/PROJECT_PLAN.md](../docs/PROJECT_PLAN.md)
 3. Export and replace `My-Verse-API.postman_collection.json` if edited in Postman
-
-Phase 2 endpoints (posts, chapters, casting, etc.) will be added to this collection as they are implemented.

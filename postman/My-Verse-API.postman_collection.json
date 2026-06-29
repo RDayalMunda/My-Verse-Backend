@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "my-verse-api-collection",
     "name": "My Verse API",
-    "description": "My Verse backend API (Phase 1 — Auth).\n\nBase URL: {{baseUrl}}\n\n**Registration flow:**\n1. Run **Media → Upload Profile Image** → sets `profilePictureMeta`\n2. Run **Auth → Register** with `profilePicture` from that meta object\n\nImport **My Verse — Local** environment. Login requests set `accessToken` automatically.",
+    "description": "My Verse backend API (Phase 1 + Phase 2).\n\nBase URL: {{baseUrl}}\n\n**Registration flow:**\n1. Run **Media → Upload Profile Image** → sets `profilePictureMeta`\n2. Run **Auth → Register** with `profilePicture` from that meta object\n\n**Project flow:**\n1. **Auth → Login (Admin)**\n2. **Projects → Create Book** → sets `projectId`\n3. **Sections → Create Section** → sets `sectionId`\n4. **Section Items → Add Text Item**\n5. **Sections → Publish Section** then **Projects → Publish Project**\n\nImport **My Verse — Local** environment.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -34,6 +34,26 @@
     },
     {
       "key": "profilePictureMeta",
+      "value": ""
+    },
+    {
+      "key": "projectId",
+      "value": ""
+    },
+    {
+      "key": "sectionId",
+      "value": ""
+    },
+    {
+      "key": "sectionItemId",
+      "value": ""
+    },
+    {
+      "key": "projectImageMeta",
+      "value": ""
+    },
+    {
+      "key": "projectVideoMeta",
       "value": ""
     }
   ],
@@ -524,6 +544,596 @@
               }
             }
           ],
+          "response": []
+        },
+        {
+          "name": "Upload Project Image",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [],
+                  "description": "jpeg, png, or webp. Max 10MB."
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/media/upload/image",
+              "host": ["{{baseUrl}}"],
+              "path": ["media", "upload", "image"]
+            },
+            "description": "Public. Upload project image. Returns FileMeta. Sets projectImageMeta."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.data) {",
+                  "    const meta = JSON.stringify(json.data);",
+                  "    pm.environment.set('projectImageMeta', meta);",
+                  "    pm.collectionVariables.set('projectImageMeta', meta);",
+                  "  }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Upload Project Video",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [],
+                  "description": "mp4 or webm. Max 500MB."
+                },
+                {
+                  "key": "durationSeconds",
+                  "value": "120",
+                  "type": "text",
+                  "description": "Video duration in seconds"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/media/upload/video",
+              "host": ["{{baseUrl}}"],
+              "path": ["media", "upload", "video"]
+            },
+            "description": "Public. Upload project video. Returns FileMeta + durationSeconds. Sets projectVideoMeta."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.data) {",
+                  "    const meta = JSON.stringify(json.data);",
+                  "    pm.environment.set('projectVideoMeta', meta);",
+                  "    pm.collectionVariables.set('projectVideoMeta', meta);",
+                  "  }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Projects",
+      "item": [
+        {
+          "name": "Create Book",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"BOOK\",\n  \"title\": \"My First Book\",\n  \"description\": \"A sample book\",\n  \"bookDetails\": { \"summary\": \"Longer summary text.\" }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/projects",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects"]
+            },
+            "description": "Admin. Creates a BOOK project in DRAFT status."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.data && json.data.id) {",
+                  "    pm.environment.set('projectId', json.data.id);",
+                  "    pm.collectionVariables.set('projectId', json.data.id);",
+                  "  }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Create Photoshoot",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"PHOTOSHOOT\",\n  \"title\": \"Summer Shoot\",\n  \"photoshootDetails\": { \"theme\": \"Beach\", \"location\": \"Malibu\" }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/projects",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects"]
+            },
+            "description": "Admin. Creates a PHOTOSHOOT project."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.data && json.data.id) {",
+                  "    pm.environment.set('projectId', json.data.id);",
+                  "    pm.collectionVariables.set('projectId', json.data.id);",
+                  "  }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Create Show",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"SHOW\",\n  \"title\": \"My Series\",\n  \"showDetails\": { \"genre\": \"Drama\" }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/projects",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects"]
+            },
+            "description": "Admin. Creates a SHOW project."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.data && json.data.id) {",
+                  "    pm.environment.set('projectId', json.data.id);",
+                  "    pm.collectionVariables.set('projectId', json.data.id);",
+                  "  }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "List Projects",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects"]
+            },
+            "description": "Public. Lists published projects (admin sees all when authenticated)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Project",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects", "{{projectId}}"]
+            },
+            "description": "Public. Get single project with sections (published only for non-admin)."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Project",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Title\",\n  \"description\": \"Updated description\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects", "{{projectId}}"]
+            },
+            "description": "Admin. Update project fields."
+          },
+          "response": []
+        },
+        {
+          "name": "Publish Project",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}/publish",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects", "{{projectId}}", "publish"]
+            },
+            "description": "Admin. Publish project (validates aggregate limits)."
+          },
+          "response": []
+        },
+        {
+          "name": "Unpublish Project",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}/unpublish",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects", "{{projectId}}", "unpublish"]
+            },
+            "description": "Admin. Unpublish project."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Visibility",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"visibility\": \"PUBLIC\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}/visibility",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects", "{{projectId}}", "visibility"]
+            },
+            "description": "Admin. Set project visibility."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Project",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects", "{{projectId}}"]
+            },
+            "description": "Admin. Soft-delete project."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Sections",
+      "item": [
+        {
+          "name": "Create Section",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"label\": \"Chapter 1\",\n  \"description\": \"Opening chapter\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}/sections",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects", "{{projectId}}", "sections"]
+            },
+            "description": "Admin. Create section in DRAFT status."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.data && json.data.id) {",
+                  "    pm.environment.set('sectionId', json.data.id);",
+                  "    pm.collectionVariables.set('sectionId', json.data.id);",
+                  "  }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Update Section",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"label\": \"Chapter 1 (revised)\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}/sections/{{sectionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects", "{{projectId}}", "sections", "{{sectionId}}"]
+            },
+            "description": "Admin. Update section label/description."
+          },
+          "response": []
+        },
+        {
+          "name": "Reorder Sections",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sectionIds\": [\"{{sectionId}}\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}/sections/reorder",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects", "{{projectId}}", "sections", "reorder"]
+            },
+            "description": "Admin. Reorder sections by ID array."
+          },
+          "response": []
+        },
+        {
+          "name": "Publish Section",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}/sections/{{sectionId}}/publish",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects", "{{projectId}}", "sections", "{{sectionId}}", "publish"]
+            },
+            "description": "Admin. Publish section."
+          },
+          "response": []
+        },
+        {
+          "name": "Unpublish Section",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}/sections/{{sectionId}}/unpublish",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects", "{{projectId}}", "sections", "{{sectionId}}", "unpublish"]
+            },
+            "description": "Admin. Unpublish section."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Section",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}/sections/{{sectionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects", "{{projectId}}", "sections", "{{sectionId}}"]
+            },
+            "description": "Admin. Delete section."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Section Items",
+      "item": [
+        {
+          "name": "Add Text Item",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kind\": \"TEXT\",\n  \"textContent\": \"Once upon a time...\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}/sections/{{sectionId}}/items",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects", "{{projectId}}", "sections", "{{sectionId}}", "items"]
+            },
+            "description": "Admin. Add TEXT item to section."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.data && json.data.id) {",
+                  "    pm.environment.set('sectionItemId', json.data.id);",
+                  "    pm.collectionVariables.set('sectionItemId', json.data.id);",
+                  "  }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Add Image Item",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kind\": \"IMAGE\",\n  \"label\": \"Cover\",\n  \"file\": {{projectImageMeta}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}/sections/{{sectionId}}/items",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects", "{{projectId}}", "sections", "{{sectionId}}", "items"]
+            },
+            "description": "Admin. Add IMAGE item. Run Media → Upload Project Image first."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.data && json.data.id) {",
+                  "    pm.environment.set('sectionItemId', json.data.id);",
+                  "    pm.collectionVariables.set('sectionItemId', json.data.id);",
+                  "  }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Add Video Item",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"kind\": \"VIDEO\",\n  \"file\": {{projectVideoMeta}},\n  \"durationSeconds\": 120\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}/sections/{{sectionId}}/items",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects", "{{projectId}}", "sections", "{{sectionId}}", "items"]
+            },
+            "description": "Admin. Add VIDEO item. Run Media → Upload Project Video first."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.data && json.data.id) {",
+                  "    pm.environment.set('sectionItemId', json.data.id);",
+                  "    pm.collectionVariables.set('sectionItemId', json.data.id);",
+                  "  }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Update Item",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"textContent\": \"Updated story text.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}/sections/{{sectionId}}/items/{{sectionItemId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects", "{{projectId}}", "sections", "{{sectionId}}", "items", "{{sectionItemId}}"]
+            },
+            "description": "Admin. Update section item."
+          },
+          "response": []
+        },
+        {
+          "name": "Reorder Items",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"itemIds\": [\"{{sectionItemId}}\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}/sections/{{sectionId}}/items/reorder",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects", "{{projectId}}", "sections", "{{sectionId}}", "items", "reorder"]
+            },
+            "description": "Admin. Reorder items by ID array."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Item",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/projects/{{projectId}}/sections/{{sectionId}}/items/{{sectionItemId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["projects", "{{projectId}}", "sections", "{{sectionId}}", "items", "{{sectionItemId}}"]
+            },
+            "description": "Admin. Delete section item."
+          },
           "response": []
         }
       ]

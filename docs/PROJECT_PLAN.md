@@ -3,7 +3,7 @@
 > High-level product and technical plan for the **My Verse** NestJS backend.  
 > A specialized Creative Universe Management System.
 
-**Related docs:** [AUTH.md](./AUTH.md) · [SETUP.md](./SETUP.md) · [REGISTRATION.md](./REGISTRATION.md) · [Postman](../postman/README.md)
+**Related docs:** [AUTH.md](./AUTH.md) · [SETUP.md](./SETUP.md) · [REGISTRATION.md](./REGISTRATION.md) · [PROJECTS.md](./PROJECTS.md) · [CONTENT_CREATION_GUIDE.md](./CONTENT_CREATION_GUIDE.md) · [Postman](../postman/README.md)
 
 ---
 
@@ -39,9 +39,9 @@ The project itself **is** the multiverse. There are no separate universe/franchi
 
 ### Content philosophy
 
-Posts are **not** rigidly typed as separate products (Movie vs Photoshoot vs Book). A single post can contain **any mix of text, images, and video**, in **any order**, of **any length** (within defined limits). Book-specific structure (chapters, characters) applies where relevant, but content blocks remain flexible.
+Content is organized as **Projects** of type **BOOK**, **PHOTOSHOOT**, or **SHOW**. Each project contains **Sections** (creator-defined labels like chapters or episodes) with ordered **SectionItems** (`TEXT`, `IMAGE`, `VIDEO`). Type-specific rules enforce what each section may contain.
 
-Posts have **no structural relationship** to each other.
+Projects have **no structural relationship** to each other.
 
 ---
 
@@ -125,7 +125,7 @@ The login endpoint returns a JWT access token. Refresh tokens are **not** used i
 
 | Role | Description |
 |------|-------------|
-| **ADMIN** | Full access to everything. Only role that can publish posts and assign staff to characters. Can activate/deactivate accounts. |
+| **ADMIN** | Full access to everything. Only role that can publish projects and assign staff to characters (Phase 3). Can activate/deactivate accounts. |
 | **STAFF** | Performers. Extended profile (see [Registration & Accounts](#registration--accounts)). Can view content, respond to cast requests, and manage own staff profile. |
 | **PUBLIC** | General audience. Base user fields only. Can view content per visibility rules. |
 
@@ -140,9 +140,9 @@ Three roles with **hardcoded permissions in code** — no `roles` or `permission
 | `users:update:self` | ✓ | ✓ | ✓ |
 | `staff:read` | ✓ | ✓ | ✓ |
 | `staff:update:self` | ✓ | ✓ | — |
-| `posts:crud` | ✓ | — | — |
-| `posts:publish` | ✓ | — | — |
-| `posts:read` | ✓ | ✓ | ✓ |
+| `projects:crud` | ✓ | — | — |
+| `projects:publish` | ✓ | — | — |
+| `projects:read` | ✓ | ✓ | ✓ |
 | `cast:respond` | ✓ | ✓ | — |
 
 **Staff and Public are almost identical** for now. The main differences: Staff has an extended profile, can update it, and can respond to cast requests (when casting is implemented).
@@ -215,82 +215,85 @@ Path C — Admin creates account
 
 ## Content Model
 
-### Post
+See **[PROJECTS.md](./PROJECTS.md)** for full Phase 2 specification.
 
-The central publishable entity.
+### Project
+
+The central publishable entity. Three types: `BOOK`, `PHOTOSHOOT`, `SHOW`.
 
 | Field | Notes |
 |-------|--------|
-| `title`, `slug` | Identity and URL |
+| `type` | `BOOK` \| `PHOTOSHOOT` \| `SHOW` |
+| `title`, `slug` | Identity and URL (unique slug) |
 | `description` | Optional summary |
 | `status` | `DRAFT` \| `PUBLISHED` \| `UNPUBLISHED` \| `DELETED` |
-| `visibility` | Per-post setting (see [Publishing & Visibility](#publishing--visibility)) |
+| `visibility` | Per-project setting (see [Publishing & Visibility](#publishing--visibility)) |
 | `isAdult` | NSFW flag |
 | `createdBy` | Admin user ID |
 | `publishedAt` | Nullable timestamp |
 
-### Episodic / web-series model
+Type extensions (1:1 collections): `BookProject` (`summary`), `PhotoshootProject` (`theme`, `location`), `ShowProject` (`genre`).
 
-A story (post) can be **published first** with zero or some chapters. Additional chapters can be **added after publish** and released over time — like a web series with episodes dropping on later dates.
+### Section
 
-```
-Post published (shell or with initial chapters)
-        ↓
-Admin adds Chapter 2 next week
-        ↓
-Admin adds Chapter 3 later
-        ↓
-Readers see new chapters as they are published
-```
+Shared across all project types. Creator-defined `label` (e.g. "Chapter 1", "Episode 3").
 
-Each chapter may have its own `publishedAt` and visibility in a future iteration. MVP: chapters belong to a post; post-level publish gate applies.
+| Field | Notes |
+|-------|--------|
+| `projectId` | Parent project |
+| `label`, `description` | Creator-defined |
+| `sortOrder` | Reorderable |
+| `status` | `DRAFT` \| `PUBLISHED` \| `UNPUBLISHED` |
+| `publishedAt` | Nullable |
 
-### Content Blocks (ordered, polymorphic)
+Sections can be added **after** the project is published. Two-level publish: public sees content only when both project and section are `PUBLISHED`.
 
-Each post (or chapter — see open decisions) contains an ordered list of content blocks:
+### SectionItem
 
-| Type | Payload |
+Ordered content within a section.
+
+| Kind | Payload |
 |------|---------|
-| `TEXT` | Text body |
-| `IMAGE` | File reference + metadata |
-| `VIDEO` | File reference + duration metadata |
+| `TEXT` | `textContent` |
+| `IMAGE` | `FileMeta` + optional `label` |
+| `VIDEO` | `FileMeta` + `durationSeconds` |
 
-Blocks are sorted by `sortOrder`.
+### Type validation (server-side)
 
-### Book structure (on a post)
+| Type | Rules |
+|------|-------|
+| BOOK | TEXT allowed; optional IMAGE/VIDEO per section |
+| PHOTOSHOOT | 1–120 IMAGE items per section |
+| SHOW | At most 1 VIDEO per section (+ optional TEXT) |
 
-#### Chapter
-
-- Belongs to a post
-- `title`, `sortOrder`, optional `publishedAt`
-- Can be added before or after post is published
+### Phase 3 — Characters & casting (deferred)
 
 #### Character (fictional)
 
-- Belongs to a post
+- Belongs to a project (BOOK/SHOW)
 - `name`, `bio`, optional `avatar`
 - **Not** 1:1 with staff — characters are fictional entities
 
 #### Cast assignment
 
 - Links a **fictional character** to a **real staff user** (`role: STAFF`)
-- A staff member can be cast on **multiple posts** as the **same or different** characters
 - Status: `PENDING` \| `ACCEPTED` \| `DECLINED` \| `REVOKED`
+- Publish gate when casts pending (Phase 3)
 
 ---
 
-## Casting Workflow
+## Casting Workflow (Phase 3 — deferred)
 
 Staff are real users. Characters they play are fictional.
 
 ```
-Admin creates draft post + characters
+Admin creates draft project + characters
         ↓
-Admin sends cast request (Staff A → Character X on Post P)
+Admin sends cast request (Staff A → Character X on Project P)
         ↓
 Staff receives request → Accept or Decline
         ↓
-Post cannot be published until all required casts are ACCEPTED
+Project cannot be published until all required casts are ACCEPTED
         ↓
 Admin publishes
 ```
@@ -300,23 +303,24 @@ Admin publishes
 - Cast requests are sent **to the staff member**, who must **accept** before they appear on published content.
 - Only Admin can send cast requests (for MVP).
 
+> **Phase 2 note:** Casting is not implemented. Projects can be published without cast validation.
+
 ---
 
 ## Publishing & Visibility
 
 ### Publishing
 
-- **Only Admin** can publish posts and chapters.
+- **Only Admin** can publish projects and sections.
 - No scheduled publish at the API level (v1).
-- Drafts can be **unpublished** or **deleted** (soft delete preferred).
-- Publish is blocked if required cast assignments are not `ACCEPTED`.
+- Drafts can be **unpublished** or **deleted** (soft delete).
+- **Two-level publish:** project must be `PUBLISHED`; public sees only `PUBLISHED` sections within it.
+- A project may be published with zero published sections ("coming soon").
+- Cast publish gate deferred to Phase 3.
 
 ### Visibility
 
-Visibility can be set:
-
-1. **Per post** — overrides defaults, or
-2. **Global default** — in the user's `defaultVisibility` setting
+Visibility is set **per project**:
 
 | Value | Meaning |
 |-------|---------|
@@ -325,22 +329,18 @@ Visibility can be set:
 | `STAFF_ONLY` | Staff and Admin |
 | `PRIVATE` | Admin only |
 
-**Resolution order:** per-post setting → poster's `defaultVisibility` → system default (`PUBLIC`).
-
 ---
 
 ## Access Control
 
-| Viewer | Non-adult public post | Adult post | Staff-only post |
-|--------|----------------------|------------|-----------------|
+| Viewer | Non-adult public project | Adult project | Staff-only project |
+|--------|-------------------------|---------------|-------------------|
 | Anonymous | View if `PUBLIC` | Denied | Denied |
 | Logged-in public | View if visibility allows | View if `nsfwEnabled` | Denied unless allowed |
 | Staff | View per visibility | View if `nsfwEnabled` | View if `STAFF_ONLY` or broader |
 | Admin | Always | Always | Always |
 
-Login is required to **interact** (rate, comment) — interaction features are deferred in MVP.
-
-Implement as a shared policy service / guard (`PostAccessGuard`).
+Implemented via `ProjectAccessService` and optional JWT on public read routes.
 
 ---
 
@@ -351,21 +351,33 @@ Implement as a shared policy service / guard (`PostAccessGuard`).
 ```
 .uploads/           # gitignored
 ├── profiles/       # staff profile images (Phase 1)
-├── images/         # post content images (later)
-└── videos/         # post content videos (later)
+├── images/         # project content images (Phase 2)
+└── videos/         # project content videos (Phase 2)
 ```
 
 ### Access (v1)
 
 `.uploads/` is **publicly served** for now. Authenticated/signed URLs may be added later.
 
-### Per-post limits (enforced on upload and publish)
+### Per-project limits (enforced on create/update and publish)
 
 | Type | Limit |
 |------|--------|
-| **Text** | ≤ 5,000,000 characters per post |
-| **Images** | ≤ 120 images, ≤ 60 MB total per post |
-| **Video** | ≤ 120 minutes, ≤ 500 MB total per post |
+| **Text** | ≤ 5,000,000 characters per project |
+| **Images** | ≤ 120 images, ≤ 60 MB total per project |
+| **Video** | ≤ 120 minutes, ≤ 500 MB total per project |
+
+### Project image limits (Phase 2)
+
+| Type | Limit |
+|------|--------|
+| **Project image** | ≤ 10 MB; jpg, png, webp |
+
+### Project video limits (Phase 2)
+
+| Type | Limit |
+|------|--------|
+| **Project video** | ≤ 500 MB; mp4, webm |
 
 ### Profile image limits (Phase 1)
 
@@ -392,17 +404,23 @@ Abstract uploads behind a `StorageService` for future cloud migration.
 - [x] Admin seeder script
 - [x] `.uploads/` directory (gitignored, publicly served)
 
-### Phase 2+ — Content (later)
+### Phase 2 — Projects, sections & content (completed)
 
-- [ ] Admin CRUD for posts
-- [ ] Book flow: chapters (including episodic release), fictional characters
-- [ ] Flexible ordered content blocks (text, image, video)
+- [x] Admin CRUD for projects (BOOK, PHOTOSHOOT, SHOW)
+- [x] Sections with creator-defined labels, reorder, per-section publish
+- [x] SectionItems (TEXT, IMAGE, VIDEO) with FileMeta two-step upload
+- [x] Publish / unpublish / soft-delete (Admin only)
+- [x] Per-project visibility settings
+- [x] NSFW gating for adult-tagged projects
+- [x] Project media upload (`/media/upload/image`, `/media/upload/video`) with limit validation
+- [x] Read APIs for Staff and Public (and anonymous where allowed)
+- [x] Documentation ([PROJECTS.md](./PROJECTS.md)) and Postman collection
+
+### Phase 3 — Casting (later)
+
+- [ ] Fictional characters on BOOK/SHOW projects
 - [ ] Cast request workflow (send, accept, decline)
-- [ ] Publish / unpublish / delete drafts (Admin only)
-- [ ] Per-post and default visibility settings
-- [ ] NSFW gating for adult-tagged posts
-- [ ] Full post media upload with limit validation
-- [ ] Read APIs for Staff and Public (and anonymous where allowed)
+- [ ] Publish gate when casts pending
 
 ### Out of scope (v1)
 
@@ -437,17 +455,18 @@ User
  ├── profilePicture?: FileMeta
  ├── role: ADMIN | STAFF | PUBLIC
  ├── isActive, nsfwEnabled
- ├── defaultVisibility (optional)
  └── StaffProfile? (when role === STAFF)
 
-Post
+Project (BOOK | PHOTOSHOOT | SHOW)
+ ├── BookProject | PhotoshootProject | ShowProject
  ├── status: DRAFT | PUBLISHED | UNPUBLISHED | DELETED
  ├── visibility, isAdult
- ├── ContentBlock[] (ordered: TEXT | IMAGE | VIDEO)
- ├── Chapter[] (ordered, can be added after publish)
+ └── Section[]
+      └── SectionItem[] (TEXT | IMAGE | VIDEO)
+
+Phase 3:
  └── Character[] (fictional)
       └── CastAssignment → User (STAFF)
-           status: PENDING | ACCEPTED | DECLINED | REVOKED
 ```
 
 ### Entity relationships
@@ -455,48 +474,39 @@ Post
 ```mermaid
 erDiagram
     User ||--o| StaffProfile : "has when STAFF"
-    User {
-        string email
-        string username
-        string role
-        boolean isActive
-    }
+    Project ||--o| BookProject : "when BOOK"
+    Project ||--o| PhotoshootProject : "when PHOTOSHOOT"
+    Project ||--o| ShowProject : "when SHOW"
+    Project ||--o{ Section : contains
+    Section ||--o{ SectionItem : contains
 
-    StaffProfile {
-        boolean isProfileComplete
-    }
-
-    Post ||--o{ ContentBlock : contains
-    Post ||--o{ Chapter : contains
-    Post ||--o{ Character : has
-
-    Character ||--o{ CastAssignment : "cast via"
-    User ||--o{ CastAssignment : "staff performs"
-
-    Post {
+    Project {
+        string type
         string status
         string visibility
         boolean isAdult
     }
 
-    Chapter {
-        string title
+    Section {
+        string label
         int sortOrder
+        string status
     }
 
-    CastAssignment {
-        string status
+    SectionItem {
+        string kind
+        int sortOrder
     }
 ```
 
-### Post lifecycle
+### Project lifecycle
 
 ```mermaid
 stateDiagram-v2
     [*] --> DRAFT
-    DRAFT --> DRAFT : edit / add casts / add chapters
+    DRAFT --> DRAFT : edit / add sections
     DRAFT --> PUBLISHED : admin publishes
-    PUBLISHED --> PUBLISHED : admin adds chapters
+    PUBLISHED --> PUBLISHED : admin adds/publishes sections
     PUBLISHED --> UNPUBLISHED : admin unpublishes
     UNPUBLISHED --> PUBLISHED : admin re-publishes
     DRAFT --> DELETED : admin deletes
@@ -523,13 +533,13 @@ src/
 ├── users/
 ├── staff/
 ├── media/              # upload + static serve
-├── posts/              # Phase 2
-├── content-blocks/     # Phase 2
-├── chapters/           # Phase 2
-├── characters/         # Phase 2
-├── casting/            # Phase 2
-└── access/             # Phase 2 — visibility + NSFW policy
+├── projects/           # Phase 2 — project CRUD, publish
+├── sections/           # Phase 2 — section CRUD, reorder, publish
+├── section-items/      # Phase 2 — item CRUD, reorder
+└── access/             # Phase 2 — ProjectAccessService
 ```
+
+Phase 3 (planned): `characters/`, `casting/`
 
 ---
 
@@ -554,24 +564,42 @@ All routes prefixed with `/api/v1`. See [AUTH.md](./AUTH.md) for Phase 1 detail.
 | `GET` | `/staff` | Public / authenticated |
 | `GET` | `/staff/:id` | Public |
 | `PATCH` | `/staff/me` | Staff |
-| `POST` | `/media/upload` | Authenticated |
+| `POST` | `/media/upload` | Public (profile images) |
+| `POST` | `/media/upload/image` | Public (project images) |
+| `POST` | `/media/upload/video` | Public (project videos) |
 | `GET` | `/health` | Public |
 
-### Posts & content (Phase 2+)
+### Projects & content (Phase 2)
+
+See [PROJECTS.md](./PROJECTS.md) for full detail.
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `POST` | `/posts` | Create draft (admin) |
-| `PATCH` | `/posts/:id` | Update post |
-| `DELETE` | `/posts/:id` | Delete draft |
-| `POST` | `/posts/:id/publish` | Publish |
-| `POST` | `/posts/:id/unpublish` | Unpublish |
-| `PATCH` | `/posts/:id/visibility` | Set visibility |
-| `GET` | `/posts` | List published |
-| `GET` | `/posts/:id` | Single post |
-| `POST` | `/posts/:id/chapters` | Add chapter (incl. after publish) |
-| `POST` | `/posts/:id/characters` | Add character |
-| `POST` | `/posts/:id/characters/:charId/cast-requests` | Admin sends cast request |
+| `POST` | `/projects` | Create project (admin) |
+| `GET` | `/projects` | List projects |
+| `GET` | `/projects/:id` | Single project with sections |
+| `PATCH` | `/projects/:id` | Update project |
+| `DELETE` | `/projects/:id` | Soft-delete |
+| `POST` | `/projects/:id/publish` | Publish |
+| `POST` | `/projects/:id/unpublish` | Unpublish |
+| `PATCH` | `/projects/:id/visibility` | Set visibility |
+| `POST` | `/projects/:projectId/sections` | Add section |
+| `PATCH` | `/projects/:projectId/sections/:sectionId` | Update section |
+| `DELETE` | `/projects/:projectId/sections/:sectionId` | Delete section |
+| `PATCH` | `/projects/:projectId/sections/reorder` | Reorder sections |
+| `POST` | `/projects/:projectId/sections/:sectionId/publish` | Publish section |
+| `POST` | `/projects/:projectId/sections/:sectionId/unpublish` | Unpublish section |
+| `POST` | `/projects/.../items` | Add section item |
+| `PATCH` | `/projects/.../items/:itemId` | Update item |
+| `DELETE` | `/projects/.../items/:itemId` | Delete item |
+| `PATCH` | `/projects/.../items/reorder` | Reorder items |
+
+### Casting (Phase 3)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/projects/:id/characters` | Add character |
+| `POST` | `/projects/:id/characters/:charId/cast-requests` | Admin sends cast request |
 | `GET` | `/cast-requests` | Staff: mine; Admin: all |
 | `POST` | `/cast-requests/:id/accept` | Staff accepts |
 | `POST` | `/cast-requests/:id/decline` | Staff declines |
@@ -592,13 +620,21 @@ All routes prefixed with `/api/v1`. See [AUTH.md](./AUTH.md) for Phase 1 detail.
 8. Admin seeder script
 9. Documentation (this file, AUTH.md, SETUP.md)
 
-### Phase 2 — Content
+### Phase 2 — Projects, sections & content
 
-1. Posts — draft CRUD, visibility, publish rules
-2. Chapters — including post-publish chapter addition
-3. Characters + casting workflow
-4. Content blocks + full media limits
-5. Read APIs with access policy + NSFW gating
+1. Documentation — [PROJECTS.md](./PROJECTS.md), update plan and Postman
+2. Schemas — Project, type extensions, Section, SectionItem
+3. Projects module — CRUD, publish, visibility
+4. Sections module — CRUD, reorder, per-section publish
+5. Section items — TEXT/IMAGE/VIDEO with limits
+6. Media — project image/video upload endpoints
+7. Access — `ProjectAccessService` on public read APIs
+
+### Phase 3 — Casting
+
+1. Characters on BOOK/SHOW projects
+2. Cast request workflow
+3. Publish gate when casts pending
 
 ---
 
@@ -606,11 +642,11 @@ All routes prefixed with `/api/v1`. See [AUTH.md](./AUTH.md) for Phase 1 detail.
 
 | # | Question | Status | Notes |
 |---|----------|--------|-------|
-| 1 | **Chapters vs blocks** | Open | Are blocks nested under chapters, or at post level with chapters as metadata? |
+| 1 | **Chapters vs blocks** | Resolved | Replaced by Sections + SectionItems |
 | 2 | **Declined cast** | Open | Block publish until recast, or allow character without cast? |
 | 3 | **Staff self-register approval** | Resolved | Immediate `STAFF` + `isActive: true` |
 | 4 | **Admin-created staff image** | Open | Required at creation vs optional until profile complete |
-| 5 | **Soft delete posts** | Open | Prefer soft delete for audit trail |
+| 5 | **Soft delete projects** | Resolved | Soft delete (`DELETED`) on projects |
 | 6 | **Username format** | Open | Allowed characters; login via username or email only? |
 
 ### Resolved
@@ -636,7 +672,7 @@ Importable Postman files live in [`postman/`](../postman/):
 
 | File | Purpose |
 |------|---------|
-| `My-Verse-API.postman_collection.json` | All Phase 1 API requests |
+| `My-Verse-API.postman_collection.json` | Phase 1 + Phase 2 API requests |
 | `My-Verse-Local.postman_environment.json` | Local dev variables (`baseUrl`, `accessToken`, etc.) |
 
 See [`postman/README.md`](../postman/README.md) for import steps and maintenance rules.
@@ -654,3 +690,5 @@ See [`postman/README.md`](../postman/README.md) for import steps and maintenance
 | 2026-06-29 | Phase 1 auth foundation implemented |
 | 2026-06-29 | Added Postman collection and local environment |
 | 2026-06-29 | FileMeta profile picture flow; REGISTRATION.md field specs |
+| 2026-06-29 | Phase 2 — Project/Section/SectionItem model; Post→Project rename |
+| 2026-06-29 | Added CONTENT_CREATION_GUIDE.md for developer onboarding |

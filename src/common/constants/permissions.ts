@@ -9,6 +9,9 @@ export const Permission = {
   POSTS_CRUD: 'posts:crud',
   POSTS_PUBLISH: 'posts:publish',
   POSTS_READ: 'posts:read',
+  PROJECTS_CRUD: 'projects:crud',
+  PROJECTS_PUBLISH: 'projects:publish',
+  PROJECTS_READ: 'projects:read',
   CAST_RESPOND: 'cast:respond',
 } as const;
 
@@ -22,6 +25,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.STAFF_READ,
     Permission.STAFF_UPDATE_SELF,
     Permission.POSTS_READ,
+    Permission.PROJECTS_READ,
     Permission.CAST_RESPOND,
   ],
   [UserRole.PUBLIC]: [
@@ -29,6 +33,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     Permission.USERS_UPDATE_SELF,
     Permission.STAFF_READ,
     Permission.POSTS_READ,
+    Permission.PROJECTS_READ,
   ],
 };
 

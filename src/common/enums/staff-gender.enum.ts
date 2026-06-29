@@ -1,0 +1,5 @@
+export enum StaffGender {
+  MALE = 'MALE',
+  FEMALE = 'FEMALE',
+  PREFER_NOT_TO_DISCLOSE = 'PREFER_NOT_TO_DISCLOSE',
+}

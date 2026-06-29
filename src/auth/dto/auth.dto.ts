@@ -1,15 +1,21 @@
 import {
+  IsArray,
+  IsDateString,
   IsDefined,
   IsEmail,
   IsNotEmpty,
   IsOptional,
   IsString,
   MinLength,
+  Validate,
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { RegisterPublicDto } from '../../users/dto/user.dto';
-import { SocialLinkDto } from '../../staff/dto/staff-profile.dto';
+import {
+  SocialLinkDto,
+  StaffProfileBodyDto,
+} from '../../staff/dto/staff-profile.dto';
+import { StaffProfileBodyConstraint } from '../../staff/validators/staff-profile-body.validator';
 import { FileMetaDto } from '../../common/dto/file-meta.dto';
 
 export class LoginDto {
@@ -21,10 +27,29 @@ export class LoginDto {
   password: string;
 }
 
-export class RegisterStaffDto extends RegisterPublicDto {
+export class RegisterStaffDto extends StaffProfileBodyDto {
+  @Validate(StaffProfileBodyConstraint)
+  private readonly _staffProfileBodyCheck?: undefined;
+
+  @IsEmail()
+  email: string;
+
+  @IsString()
+  @MinLength(3)
+  username: string;
+
+  @IsString()
+  @MinLength(8)
+  password: string;
+
   @IsString()
   @IsNotEmpty()
-  declare displayName: string;
+  displayName: string;
+
+  @IsDefined()
+  @ValidateNested()
+  @Type(() => FileMetaDto)
+  profilePicture: FileMetaDto;
 
   @IsString()
   @IsNotEmpty()
@@ -39,20 +64,17 @@ export class RegisterStaffDto extends RegisterPublicDto {
   location?: string;
 
   @IsOptional()
+  @IsArray()
   @IsString({ each: true })
   skills?: string[];
 
   @IsOptional()
-  @IsString()
+  @IsDateString()
   dateOfBirth?: string;
 
   @IsOptional()
+  @IsArray()
   @ValidateNested({ each: true })
   @Type(() => SocialLinkDto)
   socialLinks?: SocialLinkDto[];
-
-  @IsDefined()
-  @ValidateNested()
-  @Type(() => FileMetaDto)
-  declare profilePicture: FileMetaDto;
 }

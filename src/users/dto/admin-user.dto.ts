@@ -11,27 +11,9 @@ import { Type } from 'class-transformer';
 import { UserRole } from '../../common/enums/user-role.enum';
 import { Visibility } from '../../common/enums/visibility.enum';
 import { FileMetaDto } from '../../common/dto/file-meta.dto';
+import { CreateStaffProfileDto } from '../../staff/dto/staff-profile.dto';
 
-export class StaffProfileInputDto {
-  @IsOptional()
-  @IsString()
-  stageName?: string;
-
-  @IsOptional()
-  @IsString()
-  bio?: string;
-
-  @IsOptional()
-  @IsString()
-  location?: string;
-
-  @IsOptional()
-  skills?: string[];
-
-  @IsOptional()
-  @IsString()
-  dateOfBirth?: string;
-}
+export class StaffProfileInputDto extends CreateStaffProfileDto {}
 
 export class AdminCreateUserDto {
   @IsEmail()

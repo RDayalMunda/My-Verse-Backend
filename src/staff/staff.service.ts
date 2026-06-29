@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import {
@@ -11,6 +11,11 @@ import {
   UpdateStaffProfileDto,
 } from './dto/staff-profile.dto';
 import { UsersService } from '../users/users.service';
+import {
+  extractStaffProfileBody,
+  sanitizeGenderSpecificFields,
+  validateStaffProfileBody,
+} from './staff-profile.validation';
 
 @Injectable()
 export class StaffService {
@@ -24,11 +29,22 @@ export class StaffService {
     userId: string,
     dto: CreateStaffProfileDto,
   ): Promise<StaffProfileDocument> {
+    const bodyErrors = validateStaffProfileBody(dto);
+    if (bodyErrors.length) {
+      throw new BadRequestException(bodyErrors[0]);
+    }
+
     const user = await this.usersService.findByIdOrFail(userId);
+    const bodyFields = sanitizeGenderSpecificFields(
+      dto.gender,
+      extractStaffProfileBody(dto),
+    );
     const isProfileComplete = computeProfileComplete({
       stageName: dto.stageName,
       bio: dto.bio,
       hasProfilePicture: Boolean(user.profilePicture),
+      ...bodyFields,
+      gender: dto.gender,
     });
     const profile = new this.staffModel({
       userId,
@@ -38,6 +54,9 @@ export class StaffService {
       location: dto.location,
       skills: dto.skills ?? [],
       socialLinks: dto.socialLinks ?? [],
+      ...bodyFields,
+      gender: dto.gender,
+      likes: dto.likes,
       isProfileComplete,
     });
     return profile.save();
@@ -73,20 +92,65 @@ export class StaffService {
       throw new NotFoundException('Staff profile not found');
     }
     const user = await this.usersService.findByIdOrFail(userId);
-    const merged = {
-      stageName: dto.stageName ?? existing.stageName,
-      bio: dto.bio ?? existing.bio,
+
+    const mergedGender = dto.gender ?? existing.gender;
+    const mergedBody = sanitizeGenderSpecificFields(mergedGender, {
+      gender: mergedGender,
+      heightCm: dto.heightCm ?? existing.heightCm,
+      weightG: dto.weightG ?? existing.weightG,
+      likes: dto.likes ?? existing.likes,
+      chestCm: dto.chestCm ?? existing.chestCm,
+      waistCm: dto.waistCm ?? existing.waistCm,
+      hipsCm: dto.hipsCm ?? existing.hipsCm,
+      cupSize: dto.cupSize ?? existing.cupSize,
+      lengthLimpMm: dto.lengthLimpMm ?? existing.lengthLimpMm,
+      lengthErectMm: dto.lengthErectMm ?? existing.lengthErectMm,
+      girthMm: dto.girthMm ?? existing.girthMm,
+      loadCapacityMl: dto.loadCapacityMl ?? existing.loadCapacityMl,
+    });
+
+    const bodyErrors = validateStaffProfileBody(mergedBody);
+    if (bodyErrors.length) {
+      throw new BadRequestException(bodyErrors[0]);
+    }
+
+    const mergedStageName = dto.stageName ?? existing.stageName;
+    const mergedBio = dto.bio ?? existing.bio;
+    const isProfileComplete = computeProfileComplete({
+      stageName: mergedStageName,
+      bio: mergedBio,
       hasProfilePicture: Boolean(user.profilePicture),
-    };
+      ...mergedBody,
+      gender: mergedGender,
+    });
+
     const updated = await this.staffModel
       .findOneAndUpdate(
         { userId },
         {
-          ...dto,
+          ...(dto.stageName !== undefined ? { stageName: dto.stageName } : {}),
+          ...(dto.bio !== undefined ? { bio: dto.bio } : {}),
+          ...(dto.location !== undefined ? { location: dto.location } : {}),
+          ...(dto.skills !== undefined ? { skills: dto.skills } : {}),
+          ...(dto.socialLinks !== undefined
+            ? { socialLinks: dto.socialLinks }
+            : {}),
           ...(dto.dateOfBirth
             ? { dateOfBirth: new Date(dto.dateOfBirth) }
             : {}),
-          isProfileComplete: computeProfileComplete(merged),
+          gender: mergedGender,
+          heightCm: mergedBody.heightCm,
+          weightG: mergedBody.weightG,
+          likes: mergedBody.likes ?? [],
+          chestCm: mergedBody.chestCm,
+          waistCm: mergedBody.waistCm,
+          hipsCm: mergedBody.hipsCm,
+          cupSize: mergedBody.cupSize,
+          lengthLimpMm: mergedBody.lengthLimpMm,
+          lengthErectMm: mergedBody.lengthErectMm,
+          girthMm: mergedBody.girthMm,
+          loadCapacityMl: mergedBody.loadCapacityMl,
+          isProfileComplete,
         },
         { new: true },
       )
@@ -111,6 +175,18 @@ export class StaffService {
             stageName: existing.stageName,
             bio: existing.bio,
             hasProfilePicture: Boolean(user.profilePicture),
+            gender: existing.gender,
+            heightCm: existing.heightCm,
+            weightG: existing.weightG,
+            likes: existing.likes,
+            chestCm: existing.chestCm,
+            waistCm: existing.waistCm,
+            hipsCm: existing.hipsCm,
+            cupSize: existing.cupSize,
+            lengthLimpMm: existing.lengthLimpMm,
+            lengthErectMm: existing.lengthErectMm,
+            girthMm: existing.girthMm,
+            loadCapacityMl: existing.loadCapacityMl,
           }),
         },
       )

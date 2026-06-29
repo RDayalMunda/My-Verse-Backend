@@ -59,6 +59,18 @@ export class AuthService {
           skills: dto.skills,
           dateOfBirth: dto.dateOfBirth,
           socialLinks: dto.socialLinks,
+          gender: dto.gender,
+          heightCm: dto.heightCm,
+          weightG: dto.weightG,
+          likes: dto.likes,
+          chestCm: dto.chestCm,
+          waistCm: dto.waistCm,
+          hipsCm: dto.hipsCm,
+          cupSize: dto.cupSize,
+          lengthLimpMm: dto.lengthLimpMm,
+          lengthErectMm: dto.lengthErectMm,
+          girthMm: dto.girthMm,
+          loadCapacityMl: dto.loadCapacityMl,
         },
       );
       return this.buildAuthResponse(user, staffProfile);

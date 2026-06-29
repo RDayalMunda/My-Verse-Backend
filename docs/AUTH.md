@@ -133,10 +133,20 @@ Only exists when `User.role === 'STAFF'`. One profile per staff user.
     platform: string,
     url: string,
   }[],
-  socialLinks?: {
-    platform: string,
-    url: string,
-  }[],
+  gender: 'MALE' | 'FEMALE' | 'PREFER_NOT_TO_DISCLOSE',
+  heightCm: number,        // centimeters
+  weightG: number,         // grams
+  likes: string[],
+  // Female-only (when gender === FEMALE)
+  chestCm?: number,
+  waistCm?: number,
+  hipsCm?: number,
+  cupSize?: string,        // exactly 4 characters
+  // Male-only (when gender === MALE)
+  lengthLimpMm?: number,
+  lengthErectMm?: number,
+  girthMm?: number,
+  loadCapacityMl?: number,
   isProfileComplete: boolean,
   createdAt: Date,
   updatedAt: Date,
@@ -147,7 +157,7 @@ Profile photo is stored on **`User.profilePicture`** (FileMeta), not on StaffPro
 
 **Indexes:** `userId` (unique)
 
-> `isProfileComplete` is `true` when the user has `profilePicture`, plus `stageName` and `bio` on StaffProfile.
+> `isProfileComplete` is `true` when the user has `profilePicture`, plus `stageName`, `bio`, and all required body fields for the selected `gender`. See [REGISTRATION.md](./REGISTRATION.md).
 
 ### User API shape (safe — no password)
 

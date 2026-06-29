@@ -61,7 +61,7 @@ For SHOW: **Media → Upload Project Video** → **Add Video Item**
 
 Render images in the frontend with: `{origin}{fileMeta.url}` (e.g. `http://localhost:3000/uploads/images/...`).
 
-See [docs/PROJECTS.md](../docs/PROJECTS.md) and [docs/CONTENT_CREATION_GUIDE.md](../docs/CONTENT_CREATION_GUIDE.md) for full field specifications.
+See [docs/REGISTRATION.md](../docs/REGISTRATION.md) (staff body fields), [docs/PROJECTS.md](../docs/PROJECTS.md), and [docs/CONTENT_CREATION_GUIDE.md](../docs/CONTENT_CREATION_GUIDE.md) for full field specifications.
 
 ## Maintenance
 

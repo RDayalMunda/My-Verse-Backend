@@ -139,14 +139,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"performer@example.com\",\n  \"username\": \"star_performer\",\n  \"password\": \"securePass123\",\n  \"displayName\": \"Star Performer\",\n  \"profilePicture\": {{profilePictureMeta}},\n  \"stageName\": \"Star\",\n  \"bio\": \"Professional performer\",\n  \"location\": \"Los Angeles\",\n  \"skills\": [\"acting\", \"voice\"]\n}"
+              "raw": "{\n  \"email\": \"performer@example.com\",\n  \"username\": \"star_performer\",\n  \"password\": \"securePass123\",\n  \"displayName\": \"Star Performer\",\n  \"profilePicture\": {{profilePictureMeta}},\n  \"stageName\": \"Star\",\n  \"bio\": \"Professional performer\",\n  \"gender\": \"FEMALE\",\n  \"heightCm\": 170,\n  \"weightG\": 62000,\n  \"likes\": [\"acting\", \"voice\", \"dance\"],\n  \"chestCm\": 88,\n  \"waistCm\": 65,\n  \"hipsCm\": 92,\n  \"cupSize\": \"32DD\",\n  \"location\": \"Los Angeles\",\n  \"skills\": [\"acting\", \"voice\"]\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/register/staff",
               "host": ["{{baseUrl}}"],
               "path": ["auth", "register", "staff"]
             },
-            "description": "Public. JSON body with required profilePicture FileMeta. Run Media → Upload Profile Image first."
+            "description": "Public. JSON body with required profilePicture FileMeta and gender-based body fields. This example uses FEMALE measurements. Run Media → Upload Profile Image first."
           },
           "event": [
             {
@@ -337,7 +337,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"staff@example.com\",\n  \"username\": \"staffuser\",\n  \"password\": \"securePass123\",\n  \"displayName\": \"Staff User\",\n  \"role\": \"STAFF\",\n  \"profilePicture\": {{profilePictureMeta}},\n  \"staffProfile\": {\n    \"stageName\": \"Stage Name\",\n    \"bio\": \"Performer bio\",\n    \"location\": \"New York\",\n    \"skills\": [\"acting\"]\n  }\n}"
+              "raw": "{\n  \"email\": \"staff@example.com\",\n  \"username\": \"staffuser\",\n  \"password\": \"securePass123\",\n  \"displayName\": \"Staff User\",\n  \"role\": \"STAFF\",\n  \"profilePicture\": {{profilePictureMeta}},\n  \"staffProfile\": {\n    \"stageName\": \"Stage Name\",\n    \"bio\": \"Performer bio\",\n    \"gender\": \"MALE\",\n    \"heightCm\": 180,\n    \"weightG\": 78000,\n    \"likes\": [\"acting\", \"fitness\"],\n    \"lengthLimpMm\": 80,\n    \"lengthErectMm\": 140,\n    \"girthMm\": 120,\n    \"loadCapacityMl\": 5,\n    \"location\": \"New York\",\n    \"skills\": [\"acting\"]\n  }\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/users",
@@ -486,7 +486,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"stageName\": \"Updated Stage Name\",\n  \"bio\": \"Updated bio\",\n  \"location\": \"Los Angeles\",\n  \"skills\": [\"acting\", \"voice\"]\n}"
+              "raw": "{\n  \"stageName\": \"Updated Stage Name\",\n  \"bio\": \"Updated bio\",\n  \"gender\": \"FEMALE\",\n  \"heightCm\": 172,\n  \"weightG\": 63000,\n  \"likes\": [\"acting\", \"voice\"],\n  \"chestCm\": 90,\n  \"waistCm\": 66,\n  \"hipsCm\": 94,\n  \"cupSize\": \"34DD\",\n  \"location\": \"Los Angeles\",\n  \"skills\": [\"acting\", \"voice\"]\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/staff/me",

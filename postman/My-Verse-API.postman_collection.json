@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "my-verse-api-collection",
     "name": "My Verse API",
-    "description": "My Verse backend API (Phase 1 — Auth).\n\nBase URL: {{baseUrl}}\n\nImport the **My Verse — Local** environment alongside this collection.\n\nAfter **Login (Admin)** or **Login**, the `accessToken` variable is set automatically for bearer-auth requests.",
+    "description": "My Verse backend API (Phase 1 — Auth).\n\nBase URL: {{baseUrl}}\n\n**Registration flow:**\n1. Run **Media → Upload Profile Image** → sets `profilePictureMeta`\n2. Run **Auth → Register** with `profilePicture` from that meta object\n\nImport **My Verse — Local** environment. Login requests set `accessToken` automatically.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -30,6 +30,10 @@
     },
     {
       "key": "staffProfileId",
+      "value": ""
+    },
+    {
+      "key": "profilePictureMeta",
       "value": ""
     }
   ],
@@ -70,14 +74,14 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"user@example.com\",\n  \"username\": \"johndoe\",\n  \"password\": \"securePass123\",\n  \"displayName\": \"John Doe\"\n}"
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"username\": \"johndoe\",\n  \"password\": \"securePass123\",\n  \"displayName\": \"John Doe\",\n  \"profilePicture\": {{profilePictureMeta}}\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/register",
               "host": ["{{baseUrl}}"],
               "path": ["auth", "register"]
             },
-            "description": "Public. Creates a PUBLIC user. Returns JWT and user."
+            "description": "Public. Creates a PUBLIC user. Run Media → Upload Profile Image first (optional profilePicture)."
           },
           "event": [
             {
@@ -107,66 +111,22 @@
           "request": {
             "auth": { "type": "noauth" },
             "method": "POST",
-            "header": [],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
-              "mode": "formdata",
-              "formdata": [
-                {
-                  "key": "profileImage",
-                  "type": "file",
-                  "src": [],
-                  "description": "Required. jpeg, png, or webp. Max 5MB."
-                },
-                {
-                  "key": "email",
-                  "value": "performer@example.com",
-                  "type": "text"
-                },
-                {
-                  "key": "username",
-                  "value": "star_performer",
-                  "type": "text"
-                },
-                {
-                  "key": "password",
-                  "value": "securePass123",
-                  "type": "text"
-                },
-                {
-                  "key": "displayName",
-                  "value": "Star Performer",
-                  "type": "text"
-                },
-                {
-                  "key": "stageName",
-                  "value": "Star",
-                  "type": "text"
-                },
-                {
-                  "key": "bio",
-                  "value": "Professional performer",
-                  "type": "text"
-                },
-                {
-                  "key": "location",
-                  "value": "Los Angeles",
-                  "type": "text",
-                  "disabled": true
-                },
-                {
-                  "key": "skills",
-                  "value": "[\"acting\",\"voice\"]",
-                  "type": "text",
-                  "disabled": true
-                }
-              ]
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"performer@example.com\",\n  \"username\": \"star_performer\",\n  \"password\": \"securePass123\",\n  \"displayName\": \"Star Performer\",\n  \"profilePicture\": {{profilePictureMeta}},\n  \"stageName\": \"Star\",\n  \"bio\": \"Professional performer\",\n  \"location\": \"Los Angeles\",\n  \"skills\": [\"acting\", \"voice\"]\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/register/staff",
               "host": ["{{baseUrl}}"],
               "path": ["auth", "register", "staff"]
             },
-            "description": "Public. Multipart form with mandatory profileImage file. Creates STAFF user + profile."
+            "description": "Public. JSON body with required profilePicture FileMeta. Run Media → Upload Profile Image first."
           },
           "event": [
             {
@@ -357,7 +317,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"staff@example.com\",\n  \"username\": \"staffuser\",\n  \"password\": \"securePass123\",\n  \"displayName\": \"Staff User\",\n  \"role\": \"STAFF\",\n  \"staffProfile\": {\n    \"stageName\": \"Stage Name\",\n    \"bio\": \"Performer bio\",\n    \"location\": \"New York\",\n    \"skills\": [\"acting\"],\n    \"profileImage\": \"profiles/example.jpg\"\n  }\n}"
+              "raw": "{\n  \"email\": \"staff@example.com\",\n  \"username\": \"staffuser\",\n  \"password\": \"securePass123\",\n  \"displayName\": \"Staff User\",\n  \"role\": \"STAFF\",\n  \"profilePicture\": {{profilePictureMeta}},\n  \"staffProfile\": {\n    \"stageName\": \"Stage Name\",\n    \"bio\": \"Performer bio\",\n    \"location\": \"New York\",\n    \"skills\": [\"acting\"]\n  }\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/users",
@@ -431,7 +391,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"displayName\": \"My Display Name\",\n  \"nsfwEnabled\": false,\n  \"defaultVisibility\": \"PUBLIC\"\n}"
+              "raw": "{\n  \"displayName\": \"My Display Name\",\n  \"nsfwEnabled\": false,\n  \"defaultVisibility\": \"PUBLIC\",\n  \"profilePicture\": {{profilePictureMeta}}\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/users/me",
@@ -525,6 +485,7 @@
         {
           "name": "Upload Profile Image",
           "request": {
+            "auth": { "type": "noauth" },
             "method": "POST",
             "header": [],
             "body": {
@@ -543,8 +504,26 @@
               "host": ["{{baseUrl}}"],
               "path": ["media", "upload"]
             },
-            "description": "JWT required. Upload profile image. Returns path and url."
+            "description": "Public. Upload profile image. Returns FileMeta in data. Sets profilePictureMeta variable for register/update requests."
           },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200 || pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.data) {",
+                  "    const meta = JSON.stringify(json.data);",
+                  "    pm.environment.set('profilePictureMeta', meta);",
+                  "    pm.collectionVariables.set('profilePictureMeta', meta);",
+                  "  }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "response": []
         }
       ]

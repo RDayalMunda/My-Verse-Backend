@@ -37,9 +37,6 @@ export class StaffProfile {
   @Prop({ type: [SocialLinkSchema], default: [] })
   socialLinks: SocialLink[];
 
-  @Prop({ required: true })
-  profileImage: string;
-
   @Prop({ default: false })
   isProfileComplete: boolean;
 
@@ -53,12 +50,12 @@ StaffProfileSchema.index({ userId: 1 }, { unique: true });
 StaffProfileSchema.index({ isProfileComplete: 1 });
 
 export function computeProfileComplete(profile: {
-  profileImage?: string;
   stageName?: string;
   bio?: string;
+  hasProfilePicture?: boolean;
 }): boolean {
   return Boolean(
-    profile.profileImage?.trim() &&
+    profile.hasProfilePicture &&
       profile.stageName?.trim() &&
       profile.bio?.trim(),
   );

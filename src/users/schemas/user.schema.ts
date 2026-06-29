@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
 import { UserRole } from '../../common/enums/user-role.enum';
 import { Visibility } from '../../common/enums/visibility.enum';
+import { FileMeta, FileMetaSchema } from '../../common/schemas/file-meta.schema';
 
 export type UserDocument = HydratedDocument<User>;
 
@@ -18,6 +19,9 @@ export class User {
 
   @Prop({ trim: true })
   displayName?: string;
+
+  @Prop({ type: FileMetaSchema })
+  profilePicture?: FileMeta;
 
   @Prop({ required: true, enum: UserRole, default: UserRole.PUBLIC })
   role: UserRole;

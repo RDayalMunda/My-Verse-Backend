@@ -8,6 +8,7 @@ import { Model } from 'mongoose';
 import * as bcrypt from 'bcrypt';
 import { User, UserDocument } from './schemas/user.schema';
 import { UserRole } from '../common/enums/user-role.enum';
+import { FileMeta } from '../common/schemas/file-meta.schema';
 
 const BCRYPT_ROUNDS = 12;
 
@@ -19,6 +20,7 @@ export interface CreateUserInput {
   role: UserRole;
   nsfwEnabled?: boolean;
   defaultVisibility?: string;
+  profilePicture?: FileMeta;
 }
 
 @Injectable()
@@ -41,6 +43,7 @@ export class UsersService {
         username: input.username,
         passwordHash,
         displayName: input.displayName,
+        profilePicture: input.profilePicture,
         role: input.role,
         nsfwEnabled: input.nsfwEnabled ?? false,
         defaultVisibility: input.defaultVisibility,
@@ -98,6 +101,7 @@ export class UsersService {
       role: UserRole;
       nsfwEnabled: boolean;
       defaultVisibility: string;
+      profilePicture: FileMeta;
     }>,
   ): Promise<UserDocument> {
     try {

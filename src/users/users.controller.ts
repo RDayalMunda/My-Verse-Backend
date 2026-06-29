@@ -10,6 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
+import { StorageService } from '../media/storage.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -23,6 +24,7 @@ import {
   ListUsersQueryDto,
 } from './dto/admin-user.dto';
 import { toUserDto } from '../common/utils/user.mapper';
+import { fileMetaDtoToDocument } from '../common/utils/file-meta.mapper';
 import { StaffService } from '../staff/staff.service';
 
 @Controller('users')
@@ -31,6 +33,7 @@ export class UsersController {
   constructor(
     private readonly usersService: UsersService,
     private readonly staffService: StaffService,
+    private readonly storageService: StorageService,
   ) {}
 
   @Get()
@@ -51,21 +54,35 @@ export class UsersController {
     if (dto.role === UserRole.ADMIN) {
       throw new BadRequestException('Cannot create ADMIN users via API');
     }
+    if (dto.role === UserRole.STAFF) {
+      if (!dto.staffProfile) {
+        throw new BadRequestException(
+          'staffProfile is required when creating STAFF users',
+        );
+      }
+      if (!dto.profilePicture) {
+        throw new BadRequestException(
+          'profilePicture is required when creating STAFF users',
+        );
+      }
+    }
+    if (dto.profilePicture) {
+      await this.storageService.assertProfileFileMeta(dto.profilePicture);
+    }
     const user = await this.usersService.create({
       email: dto.email,
       username: dto.username,
       password: dto.password,
       displayName: dto.displayName,
       role: dto.role,
+      profilePicture: dto.profilePicture
+        ? fileMetaDtoToDocument(dto.profilePicture)
+        : undefined,
     });
     if (dto.role === UserRole.STAFF && dto.staffProfile) {
-      await this.staffService.createForUser(user._id.toString(), {
-        ...dto.staffProfile,
-        profileImage: dto.staffProfile.profileImage ?? '',
-      });
-    } else if (dto.role === UserRole.STAFF) {
-      throw new BadRequestException(
-        'staffProfile is required when creating STAFF users',
+      await this.staffService.createForUser(
+        user._id.toString(),
+        dto.staffProfile,
       );
     }
     const staffProfile =
@@ -77,7 +94,19 @@ export class UsersController {
 
   @Patch('me')
   async updateMe(@CurrentUser() user: UserDocument, @Body() dto: UpdateMeDto) {
-    const updated = await this.usersService.update(user._id.toString(), dto);
+    const { profilePicture, ...rest } = dto;
+    const updatePayload: Parameters<UsersService['update']>[1] = { ...rest };
+    if (profilePicture) {
+      await this.storageService.assertProfileFileMeta(profilePicture);
+      updatePayload.profilePicture = fileMetaDtoToDocument(profilePicture);
+    }
+    const updated = await this.usersService.update(
+      user._id.toString(),
+      updatePayload,
+    );
+    if (updated.role === UserRole.STAFF) {
+      await this.staffService.refreshProfileComplete(updated._id.toString());
+    }
     const staffProfile =
       updated.role === UserRole.STAFF
         ? await this.staffService.findByUserId(updated._id.toString())
@@ -91,7 +120,16 @@ export class UsersController {
     if (dto.role === UserRole.ADMIN) {
       throw new BadRequestException('Cannot assign ADMIN role via API');
     }
-    const updated = await this.usersService.update(id, dto);
+    const { profilePicture, ...rest } = dto;
+    const updatePayload: Parameters<UsersService['update']>[1] = { ...rest };
+    if (profilePicture) {
+      await this.storageService.assertProfileFileMeta(profilePicture);
+      updatePayload.profilePicture = fileMetaDtoToDocument(profilePicture);
+    }
+    const updated = await this.usersService.update(id, updatePayload);
+    if (updated.role === UserRole.STAFF) {
+      await this.staffService.refreshProfileComplete(updated._id.toString());
+    }
     const staffProfile =
       updated.role === UserRole.STAFF
         ? await this.staffService.findByUserId(updated._id.toString())

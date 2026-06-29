@@ -6,11 +6,12 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { StaffService } from '../staff/staff.service';
+import { StorageService } from '../media/storage.service';
 import { UserRole } from '../common/enums/user-role.enum';
-import { RegisterDto } from '../users/dto/user.dto';
+import { RegisterPublicDto } from '../users/dto/user.dto';
 import { LoginDto, RegisterStaffDto } from './dto/auth.dto';
 import { toUserDto } from '../common/utils/user.mapper';
-import { StorageService } from '../media/storage.service';
+import { fileMetaDtoToDocument } from '../common/utils/file-meta.mapper';
 
 @Injectable()
 export class AuthService {
@@ -21,25 +22,32 @@ export class AuthService {
     private storageService: StorageService,
   ) {}
 
-  async register(dto: RegisterDto) {
+  async register(dto: RegisterPublicDto) {
+    if (dto.profilePicture) {
+      await this.storageService.assertProfileFileMeta(dto.profilePicture);
+    }
     const user = await this.usersService.create({
       email: dto.email,
       username: dto.username,
       password: dto.password,
       displayName: dto.displayName,
       role: UserRole.PUBLIC,
+      profilePicture: dto.profilePicture
+        ? fileMetaDtoToDocument(dto.profilePicture)
+        : undefined,
     });
     return this.buildAuthResponse(user);
   }
 
-  async registerStaff(dto: RegisterStaffDto, file: Express.Multer.File) {
-    const { path } = await this.storageService.saveProfileImage(file);
+  async registerStaff(dto: RegisterStaffDto) {
+    await this.storageService.assertProfileFileMeta(dto.profilePicture);
     const user = await this.usersService.create({
       email: dto.email,
       username: dto.username,
       password: dto.password,
       displayName: dto.displayName,
       role: UserRole.STAFF,
+      profilePicture: fileMetaDtoToDocument(dto.profilePicture),
     });
     try {
       const staffProfile = await this.staffService.createForUser(
@@ -50,7 +58,7 @@ export class AuthService {
           location: dto.location,
           skills: dto.skills,
           dateOfBirth: dto.dateOfBirth,
-          profileImage: path,
+          socialLinks: dto.socialLinks,
         },
       );
       return this.buildAuthResponse(user, staffProfile);

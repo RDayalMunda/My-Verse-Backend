@@ -10,19 +10,26 @@ import {
   CreateStaffProfileDto,
   UpdateStaffProfileDto,
 } from './dto/staff-profile.dto';
+import { UsersService } from '../users/users.service';
 
 @Injectable()
 export class StaffService {
   constructor(
     @InjectModel(StaffProfile.name)
     private staffModel: Model<StaffProfileDocument>,
+    private usersService: UsersService,
   ) {}
 
   async createForUser(
     userId: string,
     dto: CreateStaffProfileDto,
   ): Promise<StaffProfileDocument> {
-    const isProfileComplete = computeProfileComplete(dto);
+    const user = await this.usersService.findByIdOrFail(userId);
+    const isProfileComplete = computeProfileComplete({
+      stageName: dto.stageName,
+      bio: dto.bio,
+      hasProfilePicture: Boolean(user.profilePicture),
+    });
     const profile = new this.staffModel({
       userId,
       stageName: dto.stageName,
@@ -31,7 +38,6 @@ export class StaffService {
       location: dto.location,
       skills: dto.skills ?? [],
       socialLinks: dto.socialLinks ?? [],
-      profileImage: dto.profileImage,
       isProfileComplete,
     });
     return profile.save();
@@ -66,10 +72,11 @@ export class StaffService {
     if (!existing) {
       throw new NotFoundException('Staff profile not found');
     }
+    const user = await this.usersService.findByIdOrFail(userId);
     const merged = {
-      profileImage: dto.profileImage ?? existing.profileImage,
       stageName: dto.stageName ?? existing.stageName,
       bio: dto.bio ?? existing.bio,
+      hasProfilePicture: Boolean(user.profilePicture),
     };
     const updated = await this.staffModel
       .findOneAndUpdate(
@@ -88,6 +95,26 @@ export class StaffService {
       throw new NotFoundException('Staff profile not found');
     }
     return updated;
+  }
+
+  async refreshProfileComplete(userId: string): Promise<void> {
+    const existing = await this.findByUserId(userId);
+    if (!existing) {
+      return;
+    }
+    const user = await this.usersService.findByIdOrFail(userId);
+    await this.staffModel
+      .updateOne(
+        { userId },
+        {
+          isProfileComplete: computeProfileComplete({
+            stageName: existing.stageName,
+            bio: existing.bio,
+            hasProfilePicture: Boolean(user.profilePicture),
+          }),
+        },
+      )
+      .exec();
   }
 
   async deleteByUserId(userId: string): Promise<void> {

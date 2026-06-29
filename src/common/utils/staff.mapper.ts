@@ -10,7 +10,6 @@ export function toStaffProfileDto(profile: StaffProfileDocument) {
     location: profile.location,
     skills: profile.skills,
     socialLinks: profile.socialLinks,
-    profileImage: profile.profileImage,
     isProfileComplete: profile.isProfileComplete,
     createdAt: profile.createdAt?.toISOString(),
     updatedAt: profile.updatedAt?.toISOString(),

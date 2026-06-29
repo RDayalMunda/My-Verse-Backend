@@ -43,10 +43,6 @@ export class UpdateStaffProfileDto {
   @ValidateNested({ each: true })
   @Type(() => SocialLinkDto)
   socialLinks?: SocialLinkDto[];
-
-  @IsOptional()
-  @IsString()
-  profileImage?: string;
 }
 
 export class CreateStaffProfileDto {
@@ -76,7 +72,4 @@ export class CreateStaffProfileDto {
   @ValidateNested({ each: true })
   @Type(() => SocialLinkDto)
   socialLinks?: SocialLinkDto[];
-
-  @IsString()
-  profileImage: string;
 }

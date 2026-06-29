@@ -1,7 +1,7 @@
 # My Verse — Local Setup
 
 > How to run the My Verse backend locally.  
-> See also: [PROJECT_PLAN.md](./PROJECT_PLAN.md) · [AUTH.md](./AUTH.md) · [Postman](../postman/README.md)
+> See also: [PROJECT_PLAN.md](./PROJECT_PLAN.md) · [AUTH.md](./AUTH.md) · [REGISTRATION.md](./REGISTRATION.md) · [Postman](../postman/README.md)
 
 ---
 
@@ -128,7 +128,18 @@ Media is stored locally in `.uploads/`:
 
 ## Example API Calls
 
-### Register as public user
+See [REGISTRATION.md](./REGISTRATION.md) for full field specs. Typical registration flow:
+
+### 1. Upload profile picture
+
+```bash
+curl -X POST http://localhost:3000/api/v1/media/upload \
+  -F "file=@./photo.jpg"
+```
+
+Save the `data` object from the response as `profilePicture`.
+
+### 2. Register as public user
 
 ```bash
 curl -X POST http://localhost:3000/api/v1/auth/register \
@@ -137,9 +148,19 @@ curl -X POST http://localhost:3000/api/v1/auth/register \
     "email": "user@example.com",
     "username": "johndoe",
     "password": "securePass123",
-    "displayName": "John Doe"
+    "displayName": "John Doe",
+    "profilePicture": {
+      "path": "profiles/your-file.jpg",
+      "url": "/uploads/profiles/your-file.jpg",
+      "filename": "your-file.jpg",
+      "mimeType": "image/jpeg",
+      "size": 245760,
+      "uploadedAt": "2026-06-29T12:00:00.000Z"
+    }
   }'
 ```
+
+`profilePicture` is optional for public users.
 
 ### Login
 
@@ -156,27 +177,20 @@ curl http://localhost:3000/api/v1/auth/me \
   -H "Authorization: Bearer <accessToken>"
 ```
 
-### Register as staff (multipart)
+### Register as staff
 
 ```bash
 curl -X POST http://localhost:3000/api/v1/auth/register/staff \
-  -F "profileImage=@./photo.jpg" \
-  -F "email=performer@example.com" \
-  -F "username=star_performer" \
-  -F "password=securePass123" \
-  -F "displayName=Star Performer" \
-  -F "stageName=Star" \
-  -F "bio=Professional performer" \
-  -F "location=Los Angeles" \
-  -F 'skills=["acting","voice"]'
-```
-
-### Upload profile image (logged-in staff, profile update)
-
-```bash
-curl -X POST http://localhost:3000/api/v1/media/upload \
-  -H "Authorization: Bearer <accessToken>" \
-  -F "file=@./photo.jpg"
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "performer@example.com",
+    "username": "star_performer",
+    "password": "securePass123",
+    "displayName": "Star Performer",
+    "profilePicture": { "...FileMeta from upload..." },
+    "stageName": "Star",
+    "bio": "Professional performer"
+  }'
 ```
 
 ### Health check
@@ -242,3 +256,4 @@ Expected:
 |------|--------|
 | 2026-06-29 | Initial setup guide |
 | 2026-06-29 | Added Postman import section |
+| 2026-06-29 | FileMeta upload flow; REGISTRATION.md |

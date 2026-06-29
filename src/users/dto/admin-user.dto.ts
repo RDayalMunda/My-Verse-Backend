@@ -10,6 +10,7 @@ import {
 import { Type } from 'class-transformer';
 import { UserRole } from '../../common/enums/user-role.enum';
 import { Visibility } from '../../common/enums/visibility.enum';
+import { FileMetaDto } from '../../common/dto/file-meta.dto';
 
 export class StaffProfileInputDto {
   @IsOptional()
@@ -29,7 +30,7 @@ export class StaffProfileInputDto {
 
   @IsOptional()
   @IsString()
-  profileImage?: string;
+  dateOfBirth?: string;
 }
 
 export class AdminCreateUserDto {
@@ -51,6 +52,11 @@ export class AdminCreateUserDto {
 
   @IsEnum(UserRole)
   role: UserRole;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => FileMetaDto)
+  profilePicture?: FileMetaDto;
 
   @IsOptional()
   @ValidateNested()
@@ -82,6 +88,11 @@ export class AdminUpdateUserDto {
   @IsOptional()
   @IsEnum(Visibility)
   defaultVisibility?: Visibility;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => FileMetaDto)
+  profilePicture?: FileMetaDto;
 }
 
 export class ListUsersQueryDto {

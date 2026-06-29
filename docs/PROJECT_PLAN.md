@@ -3,7 +3,7 @@
 > High-level product and technical plan for the **My Verse** NestJS backend.  
 > A specialized Creative Universe Management System.
 
-**Related docs:** [AUTH.md](./AUTH.md) · [SETUP.md](./SETUP.md) · [Postman](../postman/README.md)
+**Related docs:** [AUTH.md](./AUTH.md) · [SETUP.md](./SETUP.md) · [REGISTRATION.md](./REGISTRATION.md) · [Postman](../postman/README.md)
 
 ---
 
@@ -170,6 +170,7 @@ See [AUTH.md](./AUTH.md) for schemas, endpoints, and auth flows.
 | `username` | Unique |
 | `password` | Stored as hash only |
 | `displayName` | Optional display name |
+| `profilePicture` | Optional `FileMeta` (see [REGISTRATION.md](./REGISTRATION.md)) |
 | `role` | `ADMIN` \| `STAFF` \| `PUBLIC` |
 | `isActive` | Default `true`; Admin can toggle |
 | `nsfwEnabled` | Default `false` |
@@ -179,35 +180,36 @@ See [AUTH.md](./AUTH.md) for schemas, endpoints, and auth flows.
 
 Separate collection linked to `User` via `userId`. Public users do not have a staff profile.
 
-Extended fields include performer metadata (stage name, bio, skills, social links, etc.). Exact field list defined in [AUTH.md](./AUTH.md).
+Extended fields include performer metadata (stage name, bio, skills, social links, etc.). Full field list: [REGISTRATION.md](./REGISTRATION.md).
 
 | Field | Notes |
 |-------|--------|
-| `profileImage` | **Mandatory** for staff — path under `.uploads/profiles/` |
-| `isProfileComplete` | Tracks whether all required staff fields are filled |
+| `isProfileComplete` | `true` when user has `profilePicture` + staff has `stageName` and `bio` |
+
+Profile photo lives on **`User.profilePicture`** (`FileMeta`), not on StaffProfile.
 
 Incomplete staff profiles may be hidden from public staff listings.
 
 ### Registration paths
 
+See **[REGISTRATION.md](./REGISTRATION.md)** for full field specs.
+
 ```
+Step 0 — Upload profile picture (optional for PUBLIC, required for STAFF)
+  POST /api/v1/media/upload  → FileMeta
+
 Path A — Public self-register
-  POST /api/v1/auth/register
-  → Creates User with role PUBLIC
+  POST /api/v1/auth/register  (JSON + optional profilePicture FileMeta)
+  → role: PUBLIC
 
 Path B — Staff self-register
-  POST /api/v1/auth/register/staff
-  → Creates User with role STAFF + StaffProfile
-  → Large form + mandatory profile image upload
+  POST /api/v1/auth/register/staff  (JSON + required profilePicture FileMeta)
+  → role: STAFF + StaffProfile
 
 Path C — Admin creates account
   POST /api/v1/users  (admin only)
-  → Admin can create PUBLIC or STAFF users
+  → profilePicture FileMeta required for STAFF
 ```
-
-**Security:** `role` is never accepted from a public register body as `ADMIN`. Admin accounts are created only via the seeder script.
-
-**Staff image upload:** Recommended two-step flow — upload image via `POST /api/v1/media/upload`, then submit staff registration with the returned file reference.
 
 ---
 
@@ -432,6 +434,7 @@ See [Deferred Features](#deferred-features).
 ```
 User
  ├── email, username (unique)
+ ├── profilePicture?: FileMeta
  ├── role: ADMIN | STAFF | PUBLIC
  ├── isActive, nsfwEnabled
  ├── defaultVisibility (optional)
@@ -460,7 +463,6 @@ erDiagram
     }
 
     StaffProfile {
-        string profileImage
         boolean isProfileComplete
     }
 
@@ -651,3 +653,4 @@ See [`postman/README.md`](../postman/README.md) for import steps and maintenance
 | 2026-06-29 | Stack → MongoDB/Mongoose; auth flows; API conventions; episodic chapters; Phase 1 scope |
 | 2026-06-29 | Phase 1 auth foundation implemented |
 | 2026-06-29 | Added Postman collection and local environment |
+| 2026-06-29 | FileMeta profile picture flow; REGISTRATION.md field specs |

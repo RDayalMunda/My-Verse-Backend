@@ -2,19 +2,19 @@ import {
   Controller,
   Post,
   UploadedFile,
-  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { StorageService } from './storage.service';
-import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { Public } from '../common/decorators/public.decorator';
+import { toFileMetaDto } from '../common/utils/file-meta.mapper';
 
 @Controller('media')
-@UseGuards(JwtAuthGuard)
 export class MediaController {
   constructor(private readonly storageService: StorageService) {}
 
+  @Public()
   @Post('upload')
   @UseInterceptors(
     FileInterceptor('file', {
@@ -23,6 +23,7 @@ export class MediaController {
     }),
   )
   async upload(@UploadedFile() file: Express.Multer.File) {
-    return this.storageService.saveProfileImage(file);
+    const meta = await this.storageService.saveProfileImage(file);
+    return toFileMetaDto(meta);
   }
 }

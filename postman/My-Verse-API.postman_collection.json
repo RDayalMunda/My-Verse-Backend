@@ -127,7 +127,7 @@
           "response": []
         },
         {
-          "name": "Register (Staff)",
+          "name": "Register (Staff — Female)",
           "request": {
             "auth": { "type": "noauth" },
             "method": "POST",
@@ -139,14 +139,63 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"performer@example.com\",\n  \"username\": \"star_performer\",\n  \"password\": \"securePass123\",\n  \"displayName\": \"Star Performer\",\n  \"profilePicture\": {{profilePictureMeta}},\n  \"stageName\": \"Star\",\n  \"bio\": \"Professional performer\",\n  \"gender\": \"FEMALE\",\n  \"heightCm\": 170,\n  \"weightG\": 62000,\n  \"likes\": [\"acting\", \"voice\", \"dance\"],\n  \"chestCm\": 88,\n  \"waistCm\": 65,\n  \"hipsCm\": 92,\n  \"cupSize\": \"32DD\",\n  \"location\": \"Los Angeles\",\n  \"skills\": [\"acting\", \"voice\"]\n}"
+              "raw": "{\n  \"email\": \"performer@example.com\",\n  \"username\": \"star_performer\",\n  \"password\": \"securePass123\",\n  \"displayName\": \"Star Performer\",\n  \"profilePicture\": {{profilePictureMeta}},\n  \"stageName\": \"Star\",\n  \"bio\": \"Professional performer\",\n  \"gender\": \"FEMALE\",\n  \"heightCm\": 170,\n  \"weightG\": 62000,\n  \"likes\": [\"acting\", \"voice\", \"dance\"],\n  \"chestCm\": 88,\n  \"waistCm\": 65,\n  \"hipsCm\": 92,\n  \"cupSize\": \"DD\",\n  \"location\": \"Los Angeles\",\n  \"skills\": [\"acting\", \"voice\"]\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/auth/register/staff",
               "host": ["{{baseUrl}}"],
               "path": ["auth", "register", "staff"]
             },
-            "description": "Public. JSON body with required profilePicture FileMeta and gender-based body fields. This example uses FEMALE measurements. Run Media → Upload Profile Image first."
+            "description": "Public. Staff self-registration with gender FEMALE. Required: profilePicture FileMeta, common fields (stageName, bio, heightCm, weightG, likes), plus chestCm, waistCm, hipsCm, cupSize. Run Media → Upload Profile Image first. See docs/REGISTRATION.md."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  if (json.data && json.data.accessToken) {",
+                  "    pm.environment.set('accessToken', json.data.accessToken);",
+                  "    pm.collectionVariables.set('accessToken', json.data.accessToken);",
+                  "  }",
+                  "  if (json.data && json.data.user) {",
+                  "    pm.environment.set('userId', json.data.user.id);",
+                  "    pm.collectionVariables.set('userId', json.data.user.id);",
+                  "    if (json.data.user.staffProfile && json.data.user.staffProfile.id) {",
+                  "      pm.environment.set('staffProfileId', json.data.user.staffProfile.id);",
+                  "      pm.collectionVariables.set('staffProfileId', json.data.user.staffProfile.id);",
+                  "    }",
+                  "  }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Register (Staff — Male)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"male_performer@example.com\",\n  \"username\": \"male_performer\",\n  \"password\": \"securePass123\",\n  \"displayName\": \"Male Performer\",\n  \"profilePicture\": {{profilePictureMeta}},\n  \"stageName\": \"Max\",\n  \"bio\": \"Professional performer\",\n  \"gender\": \"MALE\",\n  \"heightCm\": 180,\n  \"weightG\": 78000,\n  \"likes\": [\"acting\", \"fitness\"],\n  \"lengthLimpMm\": 80,\n  \"lengthErectMm\": 140,\n  \"girthMm\": 120,\n  \"loadCapacityMl\": 5,\n  \"location\": \"New York\",\n  \"skills\": [\"acting\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register/staff",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register", "staff"]
+            },
+            "description": "Public. Staff self-registration with gender MALE. Required: profilePicture FileMeta, common fields (stageName, bio, heightCm, weightG, likes), plus lengthLimpMm, lengthErectMm, girthMm, loadCapacityMl. Run Media → Upload Profile Image first. See docs/REGISTRATION.md."
           },
           "event": [
             {
@@ -326,7 +375,7 @@
           "response": []
         },
         {
-          "name": "Create User (Staff)",
+          "name": "Create User (Staff — Male)",
           "request": {
             "method": "POST",
             "header": [
@@ -344,7 +393,30 @@
               "host": ["{{baseUrl}}"],
               "path": ["users"]
             },
-            "description": "Admin only. staffProfile required when role is STAFF."
+            "description": "Admin only. Create STAFF user with gender MALE. profilePicture and staffProfile required. staffProfile must include common fields plus lengthLimpMm, lengthErectMm, girthMm, loadCapacityMl. Run Media → Upload Profile Image first. See docs/REGISTRATION.md."
+          },
+          "response": []
+        },
+        {
+          "name": "Create User (Staff — Female)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"female_staff@example.com\",\n  \"username\": \"female_staff\",\n  \"password\": \"securePass123\",\n  \"displayName\": \"Female Staff\",\n  \"role\": \"STAFF\",\n  \"profilePicture\": {{profilePictureMeta}},\n  \"staffProfile\": {\n    \"stageName\": \"Stage Name\",\n    \"bio\": \"Performer bio\",\n    \"gender\": \"FEMALE\",\n    \"heightCm\": 170,\n    \"weightG\": 62000,\n    \"likes\": [\"acting\", \"voice\", \"dance\"],\n    \"chestCm\": 88,\n    \"waistCm\": 65,\n    \"hipsCm\": 92,\n    \"cupSize\": \"DD\",\n    \"location\": \"Los Angeles\",\n    \"skills\": [\"acting\"]\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            },
+            "description": "Admin only. Create STAFF user with gender FEMALE. profilePicture and staffProfile required. staffProfile must include common fields plus chestCm, waistCm, hipsCm, cupSize. Run Media → Upload Profile Image first. See docs/REGISTRATION.md."
           },
           "response": []
         },
@@ -475,7 +547,7 @@
           "response": []
         },
         {
-          "name": "Update My Staff Profile",
+          "name": "Update My Staff Profile (Female)",
           "request": {
             "method": "PATCH",
             "header": [
@@ -486,14 +558,37 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"stageName\": \"Updated Stage Name\",\n  \"bio\": \"Updated bio\",\n  \"gender\": \"FEMALE\",\n  \"heightCm\": 172,\n  \"weightG\": 63000,\n  \"likes\": [\"acting\", \"voice\"],\n  \"chestCm\": 90,\n  \"waistCm\": 66,\n  \"hipsCm\": 94,\n  \"cupSize\": \"34DD\",\n  \"location\": \"Los Angeles\",\n  \"skills\": [\"acting\", \"voice\"]\n}"
+              "raw": "{\n  \"stageName\": \"Updated Stage Name\",\n  \"bio\": \"Updated bio\",\n  \"gender\": \"FEMALE\",\n  \"heightCm\": 172,\n  \"weightG\": 63000,\n  \"likes\": [\"acting\", \"voice\"],\n  \"chestCm\": 90,\n  \"waistCm\": 66,\n  \"hipsCm\": 94,\n  \"cupSize\": \"DD\",\n  \"location\": \"Los Angeles\",\n  \"skills\": [\"acting\", \"voice\"]\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/staff/me",
               "host": ["{{baseUrl}}"],
               "path": ["staff", "me"]
             },
-            "description": "Staff role required. Update own staff profile."
+            "description": "Staff role required. Update own staff profile when gender is FEMALE. All fields optional, but merged profile must satisfy female required fields (chestCm, waistCm, hipsCm, cupSize). See docs/REGISTRATION.md."
+          },
+          "response": []
+        },
+        {
+          "name": "Update My Staff Profile (Male)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"stageName\": \"Updated Stage Name\",\n  \"bio\": \"Updated bio\",\n  \"gender\": \"MALE\",\n  \"heightCm\": 182,\n  \"weightG\": 80000,\n  \"likes\": [\"acting\", \"fitness\"],\n  \"lengthLimpMm\": 85,\n  \"lengthErectMm\": 145,\n  \"girthMm\": 125,\n  \"loadCapacityMl\": 6,\n  \"location\": \"New York\",\n  \"skills\": [\"acting\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/staff/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["staff", "me"]
+            },
+            "description": "Staff role required. Update own staff profile when gender is MALE. All fields optional, but merged profile must satisfy male required fields (lengthLimpMm, lengthErectMm, girthMm, loadCapacityMl). See docs/REGISTRATION.md."
           },
           "response": []
         }

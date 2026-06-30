@@ -155,7 +155,7 @@ Auth: none
 | `chestCm` | integer | Chest measurement in cm (min 1) |
 | `waistCm` | integer | Waist measurement in cm (min 1) |
 | `hipsCm` | integer | Hips measurement in cm (min 1) |
-| `cupSize` | string | Exactly 4 characters |
+| `cupSize` | string | 1 to 4 characters |
 
 #### Additional fields when `gender` is `MALE` (all required)
 
@@ -186,7 +186,7 @@ When `gender` is `PREFER_NOT_TO_DISCLOSE`, only the common fields above are requ
   "chestCm": 88,
   "waistCm": 65,
   "hipsCm": 92,
-  "cupSize": "32DD",
+  "cupSize": "DD",
   "location": "Los Angeles",
   "skills": ["acting", "voice"],
   "dateOfBirth": "1990-05-15",
@@ -252,10 +252,47 @@ Staff users: updating `profilePicture` also refreshes `staffProfile.isProfileCom
 
 ## Admin create user
 
+```
+POST /api/v1/users
+Authorization: Bearer <admin-token>
+Content-Type: application/json
+```
+
 Same `profilePicture` FileMeta rules:
 
 - **PUBLIC** — `profilePicture` optional
 - **STAFF** — `profilePicture` required + `staffProfile` object required (including `gender`, `heightCm`, `weightG`, `likes`, and gender-specific fields when applicable)
+
+Use separate Postman examples for **male** vs **female** staff — the `staffProfile` body fields differ the same way as [staff registration](#staff-user-registration).
+
+**Example (admin creates female staff):**
+
+```json
+{
+  "email": "female_staff@example.com",
+  "username": "female_staff",
+  "password": "securePass123",
+  "displayName": "Female Staff",
+  "role": "STAFF",
+  "profilePicture": { "...FileMeta..." },
+  "staffProfile": {
+    "stageName": "Stage Name",
+    "bio": "Performer bio",
+    "gender": "FEMALE",
+    "heightCm": 170,
+    "weightG": 62000,
+    "likes": ["acting", "voice", "dance"],
+    "chestCm": 88,
+    "waistCm": 65,
+    "hipsCm": 92,
+    "cupSize": "DD",
+    "location": "Los Angeles",
+    "skills": ["acting"]
+  }
+}
+```
+
+**Example (admin creates male staff):** same structure with `"gender": "MALE"` and `lengthLimpMm`, `lengthErectMm`, `girthMm`, `loadCapacityMl` instead of the female measurements.
 
 ---
 
@@ -288,3 +325,4 @@ sequenceDiagram
 | Date | Change |
 |------|--------|
 | 2026-06-29 | Staff profile body fields (gender, measurements, likes) |
+| 2026-06-30 | Postman: separate male/female examples for staff create/register/update |

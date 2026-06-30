@@ -141,7 +141,7 @@ Only exists when `User.role === 'STAFF'`. One profile per staff user.
   chestCm?: number,
   waistCm?: number,
   hipsCm?: number,
-  cupSize?: string,        // exactly 4 characters
+  cupSize?: string,        // 1 to 4 characters
   // Male-only (when gender === MALE)
   lengthLimpMm?: number,
   lengthErectMm?: number,

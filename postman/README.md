@@ -15,7 +15,7 @@ Postman import files for the My Verse backend API.
 2. **Import** → select both JSON files in this directory
 3. Select the **My Verse — Local** environment in the top-right dropdown
 4. Run **Media → Upload Profile Image** (sets `profilePictureMeta`)
-5. Run **Auth → Register** or **Register (Staff)** (uses `profilePictureMeta` in JSON body)
+5. Run **Auth → Register** or **Register (Staff — Female)** / **Register (Staff — Male)** (uses `profilePictureMeta` in JSON body)
 6. Run **Auth → Login (Admin)** for admin routes
 
 ## Variables
@@ -38,10 +38,14 @@ Postman import files for the My Verse backend API.
 ## Registration flow in Postman
 
 ```
-Media → Upload Profile Image     → sets profilePictureMeta
-Auth  → Register (Public)        → optional profilePicture: {{profilePictureMeta}}
-Auth  → Register (Staff)        → required profilePicture: {{profilePictureMeta}}
-Users → Update Me               → optional profilePicture: {{profilePictureMeta}}
+Media → Upload Profile Image           → sets profilePictureMeta
+Auth  → Register (Public)              → optional profilePicture: {{profilePictureMeta}}
+Auth  → Register (Staff — Female)      → female body fields + profilePicture
+Auth  → Register (Staff — Male)        → male body fields + profilePicture
+Users → Create User (Staff — Female)   → admin; female staffProfile fields
+Users → Create User (Staff — Male)     → admin; male staffProfile fields
+Users → Update Me                      → optional profilePicture: {{profilePictureMeta}}
+Staff → Update My Staff Profile (...)  → use Female or Male example matching your gender
 ```
 
 ## Project flow in Postman (Phase 2)

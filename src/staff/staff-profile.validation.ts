@@ -45,8 +45,14 @@ export function validateStaffProfileBody(
     if (profile.hipsCm == null || profile.hipsCm < 1) {
       errors.push('hipsCm is required for female profiles');
     }
-    if (!profile.cupSize || profile.cupSize.length !== 4) {
-      errors.push('cupSize is required for female profiles (exactly 4 characters)');
+    if (
+      !profile.cupSize ||
+      profile.cupSize.length < 1 ||
+      profile.cupSize.length > 4
+    ) {
+      errors.push(
+        'cupSize is required for female profiles (1 to 4 characters)',
+      );
     }
   }
 

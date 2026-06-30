@@ -62,7 +62,7 @@ export class StaffProfileBodyDto {
 
   @ValidateIf((o: StaffProfileBodyDto) => o.gender === StaffGender.FEMALE)
   @IsString()
-  @Length(4, 4)
+  @Length(1, 4)
   cupSize?: string;
 
   @ValidateIf((o: StaffProfileBodyDto) => o.gender === StaffGender.MALE)
@@ -132,7 +132,7 @@ export class UpdateStaffProfileBodyDto {
 
   @IsOptional()
   @IsString()
-  @Length(4, 4)
+  @Length(1, 4)
   cupSize?: string;
 
   @IsOptional()

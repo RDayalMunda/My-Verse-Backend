@@ -78,9 +78,22 @@ export class StaffService {
     return profile;
   }
 
-  async findAll(completeOnly = true): Promise<StaffProfileDocument[]> {
+  async findAll(
+    completeOnly = true,
+    skip = 0,
+    perPage = 20,
+  ): Promise<{ profiles: StaffProfileDocument[]; total: number }> {
     const filter = completeOnly ? { isProfileComplete: true } : {};
-    return this.staffModel.find(filter).sort({ createdAt: -1 }).exec();
+    const [profiles, total] = await Promise.all([
+      this.staffModel
+        .find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(perPage)
+        .exec(),
+      this.staffModel.countDocuments(filter).exec(),
+    ]);
+    return { profiles, total };
   }
 
   async updateForUser(

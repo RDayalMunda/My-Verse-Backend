@@ -134,18 +134,17 @@ curl -X POST http://localhost:3000/api/v1/media/upload/video \
   -F "durationSeconds=120"
 ```
 
-### 2. Reference FileMeta in item create/update
+### 2. Reference ImageFileMeta in item create/update
 
-Pass the returned `data` object as `file` in the section item JSON body.
+Pass the returned `data` object as `file` in the section item JSON body (for IMAGE items).
 
-Storage paths:
+**Image storage:** MongoDB `media` collection (BSON Binary). Render with `<img src="{origin}{file.url}">` — returns raw image bytes, not JSON.
 
-```
-.uploads/
-├── profiles/   # Phase 1
-├── images/     # project images
-└── videos/     # project videos
-```
+**Video storage:** disk at `.uploads/videos/`, served at `/uploads/videos/<path>`.
+
+### List projects pagination
+
+`GET /projects?page=1&perPage=20` — response includes `meta: { page, perPage, total, totalPages }`.
 
 ---
 
@@ -156,7 +155,7 @@ Storage paths:
 | Method | Path | Access | Notes |
 |--------|------|--------|-------|
 | `POST` | `/projects` | Admin | Create with `type` + type extension payload |
-| `GET` | `/projects` | Public (+ optional JWT) | Admin: all; Public: published + filtered |
+| `GET` | `/projects` | Public (+ optional JWT) | Admin: all; Public: published + filtered. Paginated: `?page=1&perPage=20` |
 | `GET` | `/projects/:id` | Public (+ optional JWT) | Admin: full; Public: published sections only |
 | `PATCH` | `/projects/:id` | Admin | Update base + type extension fields |
 | `DELETE` | `/projects/:id` | Admin | Soft-delete (`DELETED`) |

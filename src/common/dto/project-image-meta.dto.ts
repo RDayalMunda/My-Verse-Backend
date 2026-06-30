@@ -2,6 +2,7 @@ import {
   IsDateString,
   IsIn,
   IsInt,
+  IsMongoId,
   IsNotEmpty,
   IsString,
   Max,
@@ -12,17 +13,12 @@ const IMAGE_MIMES = ['image/jpeg', 'image/png', 'image/webp'] as const;
 const SINGLE_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
 
 export class ProjectImageMetaDto {
-  @IsString()
-  @IsNotEmpty()
-  path: string;
+  @IsMongoId()
+  mediaId: string;
 
   @IsString()
   @IsNotEmpty()
   url: string;
-
-  @IsString()
-  @IsNotEmpty()
-  filename: string;
 
   @IsString()
   @IsIn([...IMAGE_MIMES])

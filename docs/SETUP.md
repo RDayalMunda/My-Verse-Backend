@@ -109,20 +109,27 @@ curl -X POST http://localhost:3000/api/v1/auth/login \
 
 ---
 
-## Uploads Directory
+## Uploads & Media Storage
 
-Media is stored locally in `.uploads/`:
+**Images** (profile + project) are stored in MongoDB as BSON Binary in the `media` collection.
+
+| Endpoint | Returns |
+|----------|---------|
+| `GET /api/v1/media/images/:id` | Raw image bytes (`Content-Type: image/*`) — use in `<img src="{origin}{url}">` |
+| `GET /api/v1/media/images/:id?format=json` | JSON envelope with `base64` / `dataUri` (optional; not for `<img src>`) |
+
+See [REGISTRATION.md](./REGISTRATION.md#rendering-images-in-the-frontend) for frontend examples.
+
+**Videos** are stored on disk in `.uploads/videos/`:
 
 ```
 .uploads/
-├── profiles/    # staff profile images
-├── images/      # project images (Phase 2)
-└── videos/      # project videos (Phase 2)
+└── videos/      # project videos only
 ```
 
 - **Gitignored** — not committed to the repository
-- **Publicly served** in v1 at `/uploads/<path>`
-- Created automatically on first upload or app bootstrap
+- Videos **publicly served** at `/uploads/videos/<path>`
+- Video directory created automatically on app bootstrap
 
 ---
 
@@ -150,9 +157,8 @@ curl -X POST http://localhost:3000/api/v1/auth/register \
     "password": "securePass123",
     "displayName": "John Doe",
     "profilePicture": {
-      "path": "profiles/your-file.jpg",
-      "url": "/uploads/profiles/your-file.jpg",
-      "filename": "your-file.jpg",
+      "mediaId": "your-media-id",
+      "url": "/api/v1/media/images/your-media-id",
       "mimeType": "image/jpeg",
       "size": 245760,
       "uploadedAt": "2026-06-29T12:00:00.000Z"

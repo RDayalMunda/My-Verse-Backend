@@ -24,7 +24,7 @@ Postman import files for the My Verse backend API.
 |----------|-------------|
 | `baseUrl` | API base URL (default `http://localhost:3000/api/v1`) |
 | `accessToken` | JWT bearer token (set by login/register requests) |
-| `profilePictureMeta` | JSON string of FileMeta from upload (used in register/update bodies) |
+| `profilePictureMeta` | JSON string of ImageFileMeta from upload (used in register/update bodies) |
 | `userId` | Last logged-in or created user ID |
 | `staffProfileId` | Staff profile ID (set from staff list/register) |
 | `adminEmail` | Admin login email (matches `.env`) |
@@ -32,7 +32,7 @@ Postman import files for the My Verse backend API.
 | `projectId` | Last created project ID |
 | `sectionId` | Last created section ID |
 | `sectionItemId` | Last created section item ID |
-| `projectImageMeta` | FileMeta from project image upload |
+| `projectImageMeta` | ImageFileMeta from project image upload |
 | `projectVideoMeta` | FileMeta from project video upload |
 
 ## Registration flow in Postman
@@ -63,7 +63,9 @@ Projects → Get Project (no auth)  → public read with published sections
 For PHOTOSHOOT: **Media → Upload Project Image** → **Add Image Item**  
 For SHOW: **Media → Upload Project Video** → **Add Video Item**
 
-Render images in the frontend with: `{origin}{fileMeta.url}` (e.g. `http://localhost:3000/uploads/images/...`).
+Render images in the frontend with: `{origin}{fileMeta.url}` (e.g. `http://localhost:3000/api/v1/media/images/...`). This hits the **binary** image endpoint (not JSON). Videos: `{origin}{fileMeta.url}` under `/uploads/videos/...`.
+
+Postman **Media → Get Image** tests the binary response; **Get Image (JSON)** tests the optional `?format=json` envelope.
 
 See [docs/REGISTRATION.md](../docs/REGISTRATION.md) (staff body fields), [docs/PROJECTS.md](../docs/PROJECTS.md), and [docs/CONTENT_CREATION_GUIDE.md](../docs/CONTENT_CREATION_GUIDE.md) for full field specifications.
 

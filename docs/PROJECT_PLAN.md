@@ -56,7 +56,7 @@ Projects have **no structural relationship** to each other.
 | Validation | `class-validator` + DTOs |
 | File upload | `@nestjs/platform-express` + `multer` |
 | Role enforcement | Hardcoded permissions + `@Roles()` / `@RequirePermission()` guards |
-| Media storage | Local `.uploads/` directory (gitignored) |
+| Media storage | Images in MongoDB (`media` collection); videos on disk (`.uploads/videos/`) |
 | Clients | Web and mobile (this repo is API-only) |
 
 ### Infrastructure notes
@@ -89,7 +89,7 @@ All API responses use a consistent shape:
 }
 ```
 
-`meta` is optional — used for pagination (`page`, `limit`, `total`) and similar.
+`meta` is optional — used for pagination (`page`, `perPage`, `total`, `totalPages`) and similar.
 
 **Error:**
 
@@ -349,15 +349,13 @@ Implemented via `ProjectAccessService` and optional JWT on public read routes.
 ### Directory layout
 
 ```
-.uploads/           # gitignored
-├── profiles/       # staff profile images (Phase 1)
-├── images/         # project content images (Phase 2)
-└── videos/         # project content videos (Phase 2)
+MongoDB media collection   # profile + project images (BSON Binary)
+.uploads/videos/           # project videos only (gitignored)
 ```
 
 ### Access (v1)
 
-`.uploads/` is **publicly served** for now. Authenticated/signed URLs may be added later.
+Images served via `GET /api/v1/media/images/:id` (raw bytes for `<img src>`; `?format=json` for optional base64). Videos at `/uploads/videos/...`. Authenticated/signed URLs may be added later.
 
 ### Per-project limits (enforced on create/update and publish)
 

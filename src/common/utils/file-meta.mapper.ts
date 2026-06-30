@@ -1,11 +1,11 @@
-import { FileMeta } from '../schemas/file-meta.schema';
+import { ImageFileMeta } from '../schemas/file-meta.schema';
 import { FileMetaDto } from '../dto/file-meta.dto';
+import { Types } from 'mongoose';
 
-export function toFileMetaDto(meta: FileMeta) {
+export function toImageFileMetaDto(meta: ImageFileMeta) {
   return {
-    path: meta.path,
+    mediaId: meta.mediaId.toString(),
     url: meta.url,
-    filename: meta.filename,
     mimeType: meta.mimeType,
     size: meta.size,
     uploadedAt:
@@ -15,13 +15,18 @@ export function toFileMetaDto(meta: FileMeta) {
   };
 }
 
-export function fileMetaDtoToDocument(dto: FileMetaDto): FileMeta {
+export function imageFileMetaDtoToDocument(dto: FileMetaDto): ImageFileMeta {
   return {
-    path: dto.path,
+    mediaId: new Types.ObjectId(dto.mediaId),
     url: dto.url,
-    filename: dto.filename,
     mimeType: dto.mimeType,
     size: dto.size,
     uploadedAt: new Date(dto.uploadedAt),
   };
 }
+
+/** @deprecated Use toImageFileMetaDto */
+export const toFileMetaDto = toImageFileMetaDto;
+
+/** @deprecated Use imageFileMetaDtoToDocument */
+export const fileMetaDtoToDocument = imageFileMetaDtoToDocument;

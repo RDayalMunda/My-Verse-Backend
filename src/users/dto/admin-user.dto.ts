@@ -12,6 +12,7 @@ import { UserRole } from '../../common/enums/user-role.enum';
 import { Visibility } from '../../common/enums/visibility.enum';
 import { FileMetaDto } from '../../common/dto/file-meta.dto';
 import { CreateStaffProfileDto } from '../../staff/dto/staff-profile.dto';
+import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 
 export class StaffProfileInputDto extends CreateStaffProfileDto {}
 
@@ -77,10 +78,4 @@ export class AdminUpdateUserDto {
   profilePicture?: FileMetaDto;
 }
 
-export class ListUsersQueryDto {
-  @IsOptional()
-  page?: number;
-
-  @IsOptional()
-  limit?: number;
-}
+export class ListUsersQueryDto extends PaginationQueryDto {}

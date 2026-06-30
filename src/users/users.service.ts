@@ -8,7 +8,7 @@ import { Model } from 'mongoose';
 import * as bcrypt from 'bcrypt';
 import { User, UserDocument } from './schemas/user.schema';
 import { UserRole } from '../common/enums/user-role.enum';
-import { FileMeta } from '../common/schemas/file-meta.schema';
+import { ImageFileMeta } from '../common/schemas/file-meta.schema';
 
 const BCRYPT_ROUNDS = 12;
 
@@ -20,7 +20,7 @@ export interface CreateUserInput {
   role: UserRole;
   nsfwEnabled?: boolean;
   defaultVisibility?: string;
-  profilePicture?: FileMeta;
+  profilePicture?: ImageFileMeta;
 }
 
 @Injectable()
@@ -80,13 +80,24 @@ export class UsersService {
     return user;
   }
 
+  async findByIds(ids: string[]): Promise<UserDocument[]> {
+    if (!ids.length) {
+      return [];
+    }
+    return this.userModel.find({ _id: { $in: ids } }).exec();
+  }
+
   async findAll(
-    page = 1,
-    limit = 20,
+    skip = 0,
+    perPage = 20,
   ): Promise<{ users: UserDocument[]; total: number }> {
-    const skip = (page - 1) * limit;
     const [users, total] = await Promise.all([
-      this.userModel.find().skip(skip).limit(limit).sort({ createdAt: -1 }).exec(),
+      this.userModel
+        .find()
+        .skip(skip)
+        .limit(perPage)
+        .sort({ createdAt: -1 })
+        .exec(),
       this.userModel.countDocuments().exec(),
     ]);
     return { users, total };
@@ -101,7 +112,7 @@ export class UsersService {
       role: UserRole;
       nsfwEnabled: boolean;
       defaultVisibility: string;
-      profilePicture: FileMeta;
+      profilePicture: ImageFileMeta;
     }>,
   ): Promise<UserDocument> {
     try {

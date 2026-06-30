@@ -1,7 +1,7 @@
 import { UserDocument } from '../../users/schemas/user.schema';
 import { StaffProfileDocument } from '../../staff/schemas/staff-profile.schema';
 import { toStaffProfileDto } from './staff.mapper';
-import { toFileMetaDto } from './file-meta.mapper';
+import { toImageFileMetaDto } from './file-meta.mapper';
 
 export function toUserDto(
   user: UserDocument,
@@ -13,7 +13,7 @@ export function toUserDto(
     username: user.username,
     displayName: user.displayName,
     profilePicture: user.profilePicture
-      ? toFileMetaDto(user.profilePicture)
+      ? toImageFileMetaDto(user.profilePicture)
       : undefined,
     role: user.role,
     isActive: user.isActive,

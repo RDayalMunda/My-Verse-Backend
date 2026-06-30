@@ -9,6 +9,7 @@ import {
 import { Type } from 'class-transformer';
 import { ProjectType } from '../../common/enums/project-type.enum';
 import { Visibility } from '../../common/enums/visibility.enum';
+import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 
 export class BookDetailsDto {
   @IsOptional()
@@ -114,13 +115,8 @@ export class UpdateProjectVisibilityDto {
   visibility: Visibility;
 }
 
-export class ListProjectsQueryDto {
+export class ListProjectsQueryDto extends PaginationQueryDto {
   @IsOptional()
+  @IsEnum(ProjectType)
   type?: ProjectType;
-
-  @IsOptional()
-  page?: number;
-
-  @IsOptional()
-  limit?: number;
 }

@@ -101,13 +101,12 @@ Admin has **all** permissions.
 
 **Indexes:** `email` (unique), `username` (unique), `role`, `isActive`
 
-### FileMeta (embedded on User.profilePicture)
+### ImageFileMeta (embedded on User.profilePicture)
 
 ```typescript
 {
-  path: string,       // e.g. profiles/uuid.jpg
-  url: string,        // e.g. /uploads/profiles/uuid.jpg
-  filename: string,
+  mediaId: ObjectId,
+  url: string,        // e.g. /api/v1/media/images/{mediaId}
   mimeType: string,   // image/jpeg | image/png | image/webp
   size: number,       // bytes, max 5MB
   uploadedAt: Date,
@@ -305,7 +304,7 @@ Import ready-made requests from [`postman/My-Verse-API.postman_collection.json`]
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| `GET` | `/users` | Admin | List all users (paginated) |
+| `GET` | `/users` | Admin | List all users (paginated: `?page=1&perPage=20`) |
 | `POST` | `/users` | Admin | Create user |
 | `PATCH` | `/users/:id` | Admin | Update user (role, fields) |
 | `PATCH` | `/users/:id/activate` | Admin | Set `isActive: true` |
@@ -318,21 +317,49 @@ Import ready-made requests from [`postman/My-Verse-API.postman_collection.json`]
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| `GET` | `/staff` | Public | List staff profiles (complete only) |
+| `GET` | `/staff` | Public | List staff profiles (complete only; `?page=1&perPage=20`) |
 | `GET` | `/staff/:id` | Public | Single staff profile |
 | `PATCH` | `/staff/me` | Staff | Update own staff profile |
 
-### Media (profile pictures)
+### Media (images)
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| `POST` | `/media/upload` | Public | Upload image; returns FileMeta |
+| `POST` | `/media/upload` | Public | Upload profile image; returns ImageFileMeta |
+| `POST` | `/media/upload/image` | Public | Upload project image; returns ImageFileMeta |
+| `GET` | `/media/images/:id` | Public | **Binary image** — raw bytes, `Content-Type: image/*`. Bypasses JSON envelope. Use as `<img src>`. |
+| `GET` | `/media/images/:id?format=json` | Public | Standard `{ success, data }` JSON with metadata + `base64` / `dataUri` |
 
 **Profile upload limits:** ≤ 5 MB; `image/jpeg`, `image/png`, `image/webp`.
 
-Files stored at `.uploads/profiles/<filename>`. Publicly served at `/uploads/profiles/<filename>`.
+Images are stored in MongoDB (`media` collection) as BSON Binary. Videos remain on disk at `.uploads/videos/` and are served at `/uploads/videos/<filename>`.
 
-Register/update endpoints accept the returned **FileMeta** object as `profilePicture` — not raw file data.
+Register/update endpoints accept the returned **ImageFileMeta** object as `profilePicture` — not raw file data.
+
+#### Frontend image rendering
+
+```tsx
+// profilePicture.url is "/api/v1/media/images/{mediaId}"
+<img src={`${API_ORIGIN}${user.profilePicture.url}`} alt="" />
+```
+
+- **Default image URL** → binary response, suitable for `<img src>`, `<img srcset>`, CSS `background-image: url(...)`.
+- **`?format=json`** → only when you explicitly need `dataUri` / `base64` in JS. Do not use for normal display.
+
+### Pagination (list endpoints)
+
+`GET /users`, `GET /staff`, and `GET /projects` accept query params:
+
+| Param | Default | Max | Description |
+|-------|---------|-----|-------------|
+| `page` | `1` | — | Page number (1-based) |
+| `perPage` | `20` | `100` | Items per page |
+
+Response `meta`:
+
+```json
+{ "page": 1, "perPage": 20, "total": 142, "totalPages": 8 }
+```
 
 ### Health
 

@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   Patch,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { StaffService } from './staff.service';
@@ -16,8 +17,13 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { UserRole } from '../common/enums/user-role.enum';
 import type { UserDocument } from '../users/schemas/user.schema';
 import { UpdateStaffProfileDto } from './dto/staff-profile.dto';
+import { ListStaffQueryDto } from './dto/list-staff-query.dto';
 import { toStaffProfileDto } from '../common/utils/staff.mapper';
 import { toUserDto } from '../common/utils/user.mapper';
+import {
+  buildPaginationMeta,
+  resolvePagination,
+} from '../common/utils/pagination';
 
 @Controller('staff')
 export class StaffController {
@@ -28,20 +34,29 @@ export class StaffController {
 
   @Get()
   @Public()
-  async list() {
-    const profiles = await this.staffService.findAll(true);
-    const result = await Promise.all(
-      profiles.map(async (profile) => {
-        const user = await this.usersService.findById(
-          profile.userId.toString(),
-        );
-        return {
-          ...toStaffProfileDto(profile),
-          user: user ? toUserDto(user) : undefined,
-        };
-      }),
+  async list(@Query() query: ListStaffQueryDto) {
+    const { page, perPage, skip } = resolvePagination(query);
+    const { profiles, total } = await this.staffService.findAll(
+      true,
+      skip,
+      perPage,
     );
-    return result;
+    const userIds = profiles.map((p) => p.userId.toString());
+    const users = await this.usersService.findByIds(userIds);
+    const usersById = new Map(users.map((u) => [u._id.toString(), u]));
+
+    const data = profiles.map((profile) => {
+      const user = usersById.get(profile.userId.toString());
+      return {
+        ...toStaffProfileDto(profile),
+        user: user ? toUserDto(user) : undefined,
+      };
+    });
+
+    return {
+      data,
+      meta: buildPaginationMeta(page, perPage, total),
+    };
   }
 
   @Get(':id')

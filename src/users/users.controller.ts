@@ -26,6 +26,10 @@ import {
 import { toUserDto } from '../common/utils/user.mapper';
 import { fileMetaDtoToDocument } from '../common/utils/file-meta.mapper';
 import { StaffService } from '../staff/staff.service';
+import {
+  buildPaginationMeta,
+  resolvePagination,
+} from '../common/utils/pagination';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -39,12 +43,11 @@ export class UsersController {
   @Get()
   @Roles(UserRole.ADMIN)
   async list(@Query() query: ListUsersQueryDto) {
-    const page = Number(query.page) || 1;
-    const limit = Math.min(Number(query.limit) || 20, 100);
-    const { users, total } = await this.usersService.findAll(page, limit);
+    const { page, perPage, skip } = resolvePagination(query);
+    const { users, total } = await this.usersService.findAll(skip, perPage);
     return {
       data: users.map((u) => toUserDto(u)),
-      meta: { page, limit, total },
+      meta: buildPaginationMeta(page, perPage, total),
     };
   }
 

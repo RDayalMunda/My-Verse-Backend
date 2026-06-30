@@ -4,7 +4,9 @@ import { PhotoshootProjectDocument } from '../../projects/schemas/photoshoot-pro
 import { ShowProjectDocument } from '../../projects/schemas/show-project.schema';
 import { SectionDocument } from '../../sections/schemas/section.schema';
 import { SectionItemDocument } from '../../section-items/schemas/section-item.schema';
-import { toFileMetaDto } from './file-meta.mapper';
+import { ImageFileMeta, VideoFileMeta } from '../schemas/file-meta.schema';
+import { toImageFileMetaDto } from './file-meta.mapper';
+import { toVideoFileMetaDto } from './project-file-meta.mapper';
 
 export function toProjectDto(
   project: ProjectDocument,
@@ -58,6 +60,13 @@ export function toSectionDto(
   };
 }
 
+function toSectionItemFileDto(file: ImageFileMeta | VideoFileMeta) {
+  if ('mediaId' in file) {
+    return toImageFileMetaDto(file);
+  }
+  return toVideoFileMetaDto(file);
+}
+
 export function toSectionItemDto(item: SectionItemDocument) {
   return {
     id: item._id.toString(),
@@ -66,7 +75,7 @@ export function toSectionItemDto(item: SectionItemDocument) {
     kind: item.kind,
     label: item.label,
     textContent: item.textContent,
-    file: item.file ? toFileMetaDto(item.file) : undefined,
+    file: item.file ? toSectionItemFileDto(item.file) : undefined,
     durationSeconds: item.durationSeconds,
     sortOrder: item.sortOrder,
     createdAt: item.createdAt?.toISOString(),

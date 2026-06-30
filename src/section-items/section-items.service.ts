@@ -15,6 +15,7 @@ import { CreateSectionItemDto, UpdateSectionItemDto } from './dto/section-item.d
 import { StorageService } from '../media/storage.service';
 import { ProjectLimitsService } from '../projects/project-limits.service';
 import { fileMetaDtoToDocument } from '../common/utils/project-file-meta.mapper';
+import { ProjectImageMetaDto } from '../common/dto/project-image-meta.dto';
 import { ProjectVideoMetaDto } from '../common/dto/project-video-meta.dto';
 
 @Injectable()
@@ -93,12 +94,14 @@ export class SectionItemsService {
     const existing = await this.findByIdForSection(projectId, sectionId, itemId);
     if (dto.file) {
       if (existing.kind === SectionItemKind.IMAGE) {
-        await this.storageService.assertProjectImageMeta(dto.file);
+        await this.storageService.assertProjectImageMeta(
+          dto.file as ProjectImageMetaDto,
+        );
       } else if (existing.kind === SectionItemKind.VIDEO) {
         await this.storageService.assertProjectVideoMeta({
-          ...dto.file,
+          ...(dto.file as unknown as ProjectVideoMetaDto),
           durationSeconds: dto.durationSeconds ?? existing.durationSeconds ?? 1,
-        } as ProjectVideoMetaDto);
+        });
       }
     }
 
@@ -159,7 +162,9 @@ export class SectionItemsService {
       if (!dto.file) {
         throw new BadRequestException('file is required for IMAGE items');
       }
-      await this.storageService.assertProjectImageMeta(dto.file);
+      await this.storageService.assertProjectImageMeta(
+        dto.file as ProjectImageMetaDto,
+      );
       return;
     }
     if (dto.kind === SectionItemKind.VIDEO) {
@@ -170,7 +175,7 @@ export class SectionItemsService {
         throw new BadRequestException('durationSeconds is required for VIDEO items');
       }
       await this.storageService.assertProjectVideoMeta({
-        ...dto.file,
+        ...(dto.file as unknown as ProjectVideoMetaDto),
         durationSeconds: dto.durationSeconds,
       });
     }

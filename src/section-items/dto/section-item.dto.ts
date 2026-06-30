@@ -1,13 +1,11 @@
 import {
   IsEnum,
   IsInt,
-  IsNotEmpty,
   IsOptional,
   IsString,
   Min,
   ValidateNested,
 } from 'class-validator';
-import { Type } from 'class-transformer';
 import { SectionItemKind } from '../../common/enums/section-item-kind.enum';
 import { ProjectImageMetaDto } from '../../common/dto/project-image-meta.dto';
 import { ProjectVideoMetaDto } from '../../common/dto/project-video-meta.dto';
@@ -26,8 +24,7 @@ export class CreateSectionItemDto {
 
   @IsOptional()
   @ValidateNested()
-  @Type(() => ProjectImageMetaDto)
-  file?: ProjectImageMetaDto;
+  file?: ProjectImageMetaDto | ProjectVideoMetaDto;
 
   @IsOptional()
   @IsInt()
@@ -46,8 +43,7 @@ export class UpdateSectionItemDto {
 
   @IsOptional()
   @ValidateNested()
-  @Type(() => ProjectImageMetaDto)
-  file?: ProjectImageMetaDto;
+  file?: ProjectImageMetaDto | ProjectVideoMetaDto;
 
   @IsOptional()
   @IsInt()

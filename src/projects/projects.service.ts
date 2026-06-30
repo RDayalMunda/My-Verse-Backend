@@ -107,13 +107,17 @@ export class ProjectsService {
 
   async findAll(
     filter: { type?: ProjectType; status?: ProjectStatus | { $ne: ProjectStatus } },
-    page = 1,
-    limit = 20,
+    skip = 0,
+    perPage = 20,
   ) {
-    const skip = (page - 1) * limit;
     const query = { ...filter, status: filter.status ?? { $ne: ProjectStatus.DELETED } };
     const [projects, total] = await Promise.all([
-      this.projectModel.find(query).skip(skip).limit(limit).sort({ createdAt: -1 }).exec(),
+      this.projectModel
+        .find(query)
+        .skip(skip)
+        .limit(perPage)
+        .sort({ createdAt: -1 })
+        .exec(),
       this.projectModel.countDocuments(query).exec(),
     ]);
     return { projects, total };

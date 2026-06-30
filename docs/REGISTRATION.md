@@ -12,19 +12,18 @@ Registration and profile updates use a **two-step flow**:
 1. **Upload** — `POST /api/v1/media/upload` with the image file → returns a **FileMeta** object
 2. **Register / Update** — JSON body includes `profilePicture: FileMeta` (not a file blob or base64)
 
-The frontend renders the avatar with `profilePicture.url` (e.g. `http://localhost:3000/uploads/profiles/abc.jpg`).
+The frontend renders the avatar with `profilePicture.url` (e.g. `http://localhost:3000/api/v1/media/images/{mediaId}`).
 
 ---
 
-## FileMeta object
+## ImageFileMeta object
 
-Returned by upload and accepted by register/update endpoints.
+Returned by upload and accepted by register/update endpoints. Images are stored in MongoDB as BSON Binary (not on disk).
 
 ```json
 {
-  "path": "profiles/a1b2c3d4-e5f6-7890-abcd-ef1234567890.jpg",
-  "url": "/uploads/profiles/a1b2c3d4-e5f6-7890-abcd-ef1234567890.jpg",
-  "filename": "a1b2c3d4-e5f6-7890-abcd-ef1234567890.jpg",
+  "mediaId": "a1b2c3d4e5f6789012345678",
+  "url": "/api/v1/media/images/a1b2c3d4e5f6789012345678",
   "mimeType": "image/jpeg",
   "size": 245760,
   "uploadedAt": "2026-06-29T12:00:00.000Z"
@@ -33,14 +32,47 @@ Returned by upload and accepted by register/update endpoints.
 
 | Field | Description |
 |-------|-------------|
-| `path` | Internal storage path (under `.uploads/`) |
-| `url` | Public URL path — prepend server origin for full URL |
-| `filename` | Stored filename |
+| `mediaId` | MongoDB ObjectId of the stored image |
+| `url` | API path to serve the image — prepend server origin for full URL |
 | `mimeType` | `image/jpeg`, `image/png`, or `image/webp` |
 | `size` | File size in bytes (max 5,242,880 / 5 MB) |
 | `uploadedAt` | ISO 8601 timestamp |
 
-The server validates that the file exists on disk and that `path`, `url`, `filename`, and `size` are consistent before accepting `profilePicture` on register/update.
+The server validates that the image exists in MongoDB and that `mediaId`, `url`, `mimeType`, and `size` are consistent before accepting `profilePicture` on register/update.
+
+---
+
+## Rendering images in the frontend
+
+Use the `url` from `ImageFileMeta` directly in an `<img>` tag. Prepend your API origin:
+
+```html
+<img src="https://your-api-host/api/v1/media/images/{mediaId}" alt="Avatar" />
+```
+
+```tsx
+// React example — profilePicture.url is already "/api/v1/media/images/..."
+<img src={`${API_ORIGIN}${user.profilePicture.url}`} alt="Avatar" />
+```
+
+### What `GET /media/images/:id` returns
+
+| Request | Response | Use case |
+|---------|----------|----------|
+| `GET /api/v1/media/images/:id` | **Raw image bytes** — `Content-Type: image/jpeg` (or png/webp). **Not** the `{ success, data }` JSON envelope. | `<img src="...">`, browser-native loading, caching |
+| `GET /api/v1/media/images/:id?format=json` | Standard JSON envelope with `data.base64` and `data.dataUri` | Inline preview when you cannot use a URL (rare) |
+
+**Do not** point `<img src>` at `?format=json` — that returns JSON, not an image.
+
+List endpoints (`GET /users`, `GET /staff`, `GET /projects`) return `ImageFileMeta` metadata only (`mediaId`, `url`, `mimeType`, `size`). They do **not** include base64. Fetch the image via `url` when it needs to be displayed.
+
+Optional base64 fetch (avoid on list views):
+
+```
+GET /api/v1/media/images/{mediaId}?format=json
+→ data.dataUri  e.g. "data:image/jpeg;base64,..."
+```
+
 
 ---
 
@@ -64,9 +96,8 @@ Auth: none (public)
 {
   "success": true,
   "data": {
-    "path": "profiles/...",
-    "url": "/uploads/profiles/...",
-    "filename": "...",
+    "mediaId": "...",
+    "url": "/api/v1/media/images/...",
     "mimeType": "image/jpeg",
     "size": 245760,
     "uploadedAt": "2026-06-29T12:00:00.000Z"
@@ -101,9 +132,8 @@ Auth: none
   "password": "securePass123",
   "displayName": "John Doe",
   "profilePicture": {
-    "path": "profiles/a1b2c3d4.jpg",
-    "url": "/uploads/profiles/a1b2c3d4.jpg",
-    "filename": "a1b2c3d4.jpg",
+    "mediaId": "a1b2c3d4e5f6789012345678",
+    "url": "/api/v1/media/images/a1b2c3d4e5f6789012345678",
     "mimeType": "image/jpeg",
     "size": 245760,
     "uploadedAt": "2026-06-29T12:00:00.000Z"

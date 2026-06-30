@@ -1,7 +1,10 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import { HydratedDocument, Schema as MongooseSchema, Types } from 'mongoose';
 import { SectionItemKind } from '../../common/enums/section-item-kind.enum';
-import { FileMeta, FileMetaSchema } from '../../common/schemas/file-meta.schema';
+import {
+  ImageFileMeta,
+  VideoFileMeta,
+} from '../../common/schemas/file-meta.schema';
 
 export type SectionItemDocument = HydratedDocument<SectionItem>;
 
@@ -22,8 +25,8 @@ export class SectionItem {
   @Prop()
   textContent?: string;
 
-  @Prop({ type: FileMetaSchema })
-  file?: FileMeta;
+  @Prop({ type: MongooseSchema.Types.Mixed })
+  file?: ImageFileMeta | VideoFileMeta;
 
   @Prop()
   durationSeconds?: number;

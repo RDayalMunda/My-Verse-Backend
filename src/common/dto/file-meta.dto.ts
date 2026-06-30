@@ -2,6 +2,7 @@ import {
   IsDateString,
   IsIn,
   IsInt,
+  IsMongoId,
   IsNotEmpty,
   IsString,
   Max,
@@ -12,17 +13,12 @@ const PROFILE_MIMES = ['image/jpeg', 'image/png', 'image/webp'] as const;
 const PROFILE_MAX_BYTES = 5 * 1024 * 1024;
 
 export class FileMetaDto {
-  @IsString()
-  @IsNotEmpty()
-  path: string;
+  @IsMongoId()
+  mediaId: string;
 
   @IsString()
   @IsNotEmpty()
   url: string;
-
-  @IsString()
-  @IsNotEmpty()
-  filename: string;
 
   @IsString()
   @IsIn([...PROFILE_MIMES])

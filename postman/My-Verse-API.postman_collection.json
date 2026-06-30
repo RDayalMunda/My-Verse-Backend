@@ -37,6 +37,10 @@
       "value": ""
     },
     {
+      "key": "imageMediaId",
+      "value": ""
+    },
+    {
       "key": "projectId",
       "value": ""
     },
@@ -339,12 +343,12 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/users?page=1&limit=20",
+              "raw": "{{baseUrl}}/users?page=1&perPage=20",
               "host": ["{{baseUrl}}"],
               "path": ["users"],
               "query": [
                 { "key": "page", "value": "1" },
-                { "key": "limit", "value": "20" }
+                { "key": "perPage", "value": "20" }
               ]
             },
             "description": "Admin only. Paginated user list."
@@ -506,11 +510,15 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/staff",
+              "raw": "{{baseUrl}}/staff?page=1&perPage=20",
               "host": ["{{baseUrl}}"],
-              "path": ["staff"]
+              "path": ["staff"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "perPage", "value": "20" }
+              ]
             },
-            "description": "Public. Lists complete staff profiles only."
+            "description": "Public. Lists complete staff profiles only. Paginated response with meta."
           },
           "event": [
             {
@@ -619,7 +627,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["media", "upload"]
             },
-            "description": "Public. Upload profile image. Returns FileMeta in data. Sets profilePictureMeta variable for register/update requests."
+            "description": "Public. Upload profile image. Returns ImageFileMeta (mediaId, url, mimeType, size, uploadedAt). Sets profilePictureMeta variable for register/update requests."
           },
           "event": [
             {
@@ -632,6 +640,10 @@
                   "    const meta = JSON.stringify(json.data);",
                   "    pm.environment.set('profilePictureMeta', meta);",
                   "    pm.collectionVariables.set('profilePictureMeta', meta);",
+                  "    if (json.data.mediaId) {",
+                  "      pm.environment.set('imageMediaId', json.data.mediaId);",
+                  "      pm.collectionVariables.set('imageMediaId', json.data.mediaId);",
+                  "    }",
                   "  }",
                   "}"
                 ],
@@ -639,6 +651,37 @@
               }
             }
           ],
+          "response": []
+        },
+        {
+          "name": "Get Image",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/media/images/{{imageMediaId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["media", "images", "{{imageMediaId}}"]
+            },
+            "description": "Public. Serve image bytes. Run Upload Profile Image first to set imageMediaId. Append ?format=json for base64/dataUri metadata."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Image (JSON)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/media/images/{{imageMediaId}}?format=json",
+              "host": ["{{baseUrl}}"],
+              "path": ["media", "images", "{{imageMediaId}}"],
+              "query": [{ "key": "format", "value": "json" }]
+            },
+            "description": "Public. Returns image metadata with base64 and dataUri virtuals."
+          },
           "response": []
         },
         {
@@ -663,7 +706,7 @@
               "host": ["{{baseUrl}}"],
               "path": ["media", "upload", "image"]
             },
-            "description": "Public. Upload project image. Returns FileMeta. Sets projectImageMeta."
+            "description": "Public. Upload project image. Returns ImageFileMeta. Sets projectImageMeta."
           },
           "event": [
             {
@@ -852,11 +895,15 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/projects",
+              "raw": "{{baseUrl}}/projects?page=1&perPage=20",
               "host": ["{{baseUrl}}"],
-              "path": ["projects"]
+              "path": ["projects"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "perPage", "value": "20" }
+              ]
             },
-            "description": "Public. Lists published projects (admin sees all when authenticated)."
+            "description": "Public. Lists published projects (admin sees all when authenticated). Paginated."
           },
           "response": []
         },

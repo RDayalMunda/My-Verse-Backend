@@ -35,6 +35,10 @@ import {
   toSectionDto,
   toSectionItemDto,
 } from '../common/utils/project.mapper';
+import {
+  buildPaginationMeta,
+  resolvePagination,
+} from '../common/utils/pagination';
 
 @Controller('projects')
 export class ProjectsController {
@@ -64,8 +68,7 @@ export class ProjectsController {
     @Query() query: ListProjectsQueryDto,
     @OptionalUser() user: UserDocument | null,
   ) {
-    const page = Number(query.page) || 1;
-    const limit = Math.min(Number(query.limit) || 20, 100);
+    const { page, perPage, skip } = resolvePagination(query);
     const isAdmin = this.projectAccessService.canViewAdminList(user);
 
     const filter: {
@@ -81,8 +84,8 @@ export class ProjectsController {
 
     const { projects, total } = await this.projectsService.findAll(
       filter,
-      page,
-      limit,
+      skip,
+      perPage,
     );
 
     const visible = isAdmin
@@ -100,7 +103,11 @@ export class ProjectsController {
 
     return {
       data,
-      meta: { page, limit, total: isAdmin ? total : visible.length },
+      meta: buildPaginationMeta(
+        page,
+        perPage,
+        isAdmin ? total : visible.length,
+      ),
     };
   }
 
